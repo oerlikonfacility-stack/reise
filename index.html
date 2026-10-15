@@ -23,7 +23,9 @@ header small{color:#c5d6e4}
 .stats{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .stat{background:rgba(255,255,255,.14);border-radius:10px;padding:6px 12px;font-size:14px}
 .stat b{font-size:18px;margin-right:4px}
-main{max-width:760px;margin:auto;padding:12px}
+main{max-width:760px;margin:auto;padding:12px 12px 96px}
+#fab{position:fixed;right:max(18px,calc(50% - 380px + 18px));bottom:calc(20px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;background:var(--pr);color:#fff;border:0;font-size:34px;line-height:1;padding:0;margin:0;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:5;display:none}
+#fab:active{transform:scale(.94)}
 input,select,button{font:inherit;padding:12px;border-radius:10px;color:var(--tx)}
 input,select{width:100%;border:1px solid var(--bd);background:var(--card);margin:4px 0 10px}
 button{border:0;background:var(--pr);color:#fff;font-weight:600;cursor:pointer;margin:3px}
@@ -104,6 +106,7 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 
   <div id="list"></div>
 </main>
+<button id="fab" onclick="if(T())openStop(T().id,'')" aria-label="Neuer Eintrag">+</button>
 
 <div id="sheet"><div class="in">
   <h2 id="sTitle">Neue Reise</h2>
@@ -215,6 +218,7 @@ function render() {
   const t = T();
   $("ovBtn").textContent = "🗂️ Reiseübersicht (" + db.trips.length + ")";
   renderStops();
+  $("fab").style.display = t ? "block" : "none";
   $("curTrip").innerHTML = T() ? "Aktive Reise: " + esc(T().name) + " · <a href=\"#\" onclick=\"openTrip('" + T().id + "');return false\" style=\"color:var(--pr);font-weight:600\">✏️ bearbeiten / löschen</a>" : "";
   $("addExp").style.display = t ? "flex" : "none";
   if (!t) {
@@ -445,7 +449,7 @@ function renderStops() {
   const t = T(), el = $("stopsBox");
   if (!t) { el.innerHTML = ""; return; }
   const total = t.stops.filter(o => !o.s).reduce((x, o) => x + (o.amt || 0), 0);
-  el.innerHTML = `<div class="day" style="margin:4px 0 6px"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>` + stopsOf(t) + `<button class="chip op" onclick="openStop('${t.id}','')">+ Eintrag</button>`;
+  el.innerHTML = `<div class="day" style="margin:4px 0 6px"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>` + stopsOf(t);
 }
 function renderOv() {
   const names = ["📍 Läuft gerade", "🗓️ Geplant", "✅ Vergangen", "Ohne Datum"];

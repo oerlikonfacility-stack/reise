@@ -423,6 +423,15 @@ function saveTrip() {
   if (t.start && !$("pD").value) $("pD").value = t.start;
   $("sheet").style.display = "none";
   render();
+  if (isNew) {
+    // Neue Reise: direkt den ersten Eintrag anlegen, ohne Umweg über die Übersicht
+    fromOv = false;
+    openStop(t.id, "");
+    $("s_name").value = dest;
+    $("s_name").focus();
+    $("s_name").select();
+    return;
+  }
   if (fromOv) { fromOv = false; openOv(); }
 }
 async function delTrip() {

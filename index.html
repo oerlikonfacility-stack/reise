@@ -93,19 +93,12 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
   <div id="curTrip" class="meta" style="margin:0 4px 10px"></div>
   <div id="stopsBox"></div>
 
-  <div class="tabs" id="tabs">
-    <button data-t="exp" onclick="setTab('exp')">💶 Ausgaben</button>
-    <button data-t="plan" onclick="setTab('plan')">📅 Programm</button>
-  </div>
+  <div class="day" style="margin:10px 0 6px"><span>💶 Ausgaben</span></div>
 
   <div id="addExp" class="add">
     <input id="eA" inputmode="decimal" placeholder="Betrag, z. B. 12,50" onkeydown="if(event.key==='Enter')addExp()">
     <button onclick="addExp()" aria-label="Ausgabe hinzufügen">+</button>
     <button class="sec" id="expUndo" onclick="delLastExp()" aria-label="Letzte Ausgabe löschen" style="display:none">↶</button>
-  </div>
-  <div id="addPlan">
-    <div class="add"><input id="pD" type="date"><input id="pT" type="time" style="max-width:120px"></div>
-    <div class="add" style="margin-top:6px"><input id="pN" placeholder="Programmpunkt" onkeydown="if(event.key==='Enter')addPlan()"><button onclick="addPlan()" aria-label="Hinzufügen">+</button></div>
   </div>
 
   <div id="list"></div>
@@ -216,16 +209,13 @@ function money(v, c) {
   catch (e) { return v.toFixed(2) + " " + c; }
 }
 
-function setTab(t) { tab = t; render(); }
 
 function render() {
   const t = T();
   $("ovBtn").textContent = "🗂️ Reiseübersicht (" + db.trips.length + ")";
   renderStops();
   $("curTrip").textContent = T() ? "Aktive Reise: " + T().name : "";
-  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === tab));
-  $("addExp").style.display = tab === "exp" && t ? "flex" : "none";
-  $("addPlan").style.display = tab === "plan" && t ? "block" : "none";
+  $("addExp").style.display = t ? "flex" : "none";
   if (!t) {
     $("stats").innerHTML = "";
     setHH();
@@ -243,19 +233,11 @@ function render() {
   setHH();
 
   let h = "";
-  if (tab === "exp") {
+  {
     const last = t.exp.slice().sort((a, b) => b.c - a.c)[0];
     h = last ? `<div class="meta" style="margin:6px 4px">Zuletzt eingetragen: <b>${money(last.a, t.cur)}</b> · mit ↶ löschst du diese Eingabe.</div>`
              : `<div class="card">Noch keine Ausgaben. Betrag eintippen und auf + tippen, die Beträge werden oben zusammengezählt.</div>`;
     $("expUndo").style.display = last ? "" : "none";
-  } else {
-    const days = {};
-    t.plan.forEach(p => (days[p.d] = days[p.d] || []).push(p));
-    h = Object.keys(days).sort().map(d =>
-      `<div class="day"><span>${wd(d)}</span></div>` +
-      days[d].sort((a, b) => (a.t || "").localeCompare(b.t || "")).map(p =>
-        `<div class="row${p.x ? " done" : ""}" onclick="tog('plan','${p.id}')"><span>${p.x ? "✅" : "📍"}</span><div class="t">${p.t ? "<b>" + esc(p.t) + "</b> " : ""}${esc(p.n)}</div><button class="x" onclick="event.stopPropagation();del('plan','${p.id}')" aria-label="Löschen">✕</button></div>`).join("")
-    ).join("") || `<div class="card">Noch kein Programm. Wähle ein Datum, trage einen Punkt ein und tippe auf +.</div>`;
   }
   $("list").innerHTML = h;
 }
@@ -308,16 +290,6 @@ function delPk(tid, sid, pid) {
   if (!o) return;
   o.pack = o.pack.filter(x => x.id !== pid);
   save(); renderOv(); render();
-}
-function addPlan() {
-  const t = T(), n = $("pN").value.trim();
-  if (!t) return;
-  if (!n) { $("pN").focus(); return; }
-  t.plan.push({id: uid(), d: $("pD").value || today(), t: $("pT").value, n: n, x: false});
-  if (!save()) t.plan.pop();
-  $("pN").value = ""; $("pT").value = "";
-  render();
-  $("pN").focus();
 }
 function tog(kind, id) {
   const it = T()[kind].find(x => x.id === id);
@@ -420,7 +392,6 @@ function saveTrip() {
   Object.assign(t, {name: name, dest: dest, start: $("f_start").value, end: $("f_end").value, cur: $("f_cur").value, budget: num($("f_budget").value) || 0});
   if (isNew && (!fromOv || !db.cur)) db.cur = t.id;
   if (!save()) { db = JSON.parse(snapshot); return; }
-  if (t.start && !$("pD").value) $("pD").value = t.start;
   $("sheet").style.display = "none";
   render();
   if (isNew) {
@@ -670,7 +641,6 @@ function rmSelf() { try { localStorage.removeItem(SELFK); } catch (e) {} showSel
 
 /* ---------- Start ---------- */
 
-$("pD").value = today();
 function setHH() { document.documentElement.style.setProperty("--hh", $("hdr").offsetHeight + "px"); }
 render();
 setHH();

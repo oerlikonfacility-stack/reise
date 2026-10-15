@@ -89,11 +89,10 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 </header>
 
 <main>
-  <div class="add" style="margin-bottom:4px">
-    <button class="sec" id="ovBtn" onclick="openOv()" style="flex:1;width:auto;margin:0;padding:12px 6px;font-size:15px">🗂️ Reiseübersicht</button>
+  <div class="add" style="margin-bottom:4px;align-items:center">
+    <div id="curTrip" class="meta" style="flex:1;margin:0 4px"></div>
     <button class="sec" onclick="$('sys').style.display='block'" aria-label="System" style="font-size:22px">⚙️</button>
   </div>
-  <div id="curTrip" class="meta" style="margin:0 4px 10px"></div>
   <div id="stopsBox"></div>
 
   <div class="day" style="margin:10px 0 6px"><span>💶 Ausgaben</span></div>
@@ -129,6 +128,7 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 <div id="sys"><div class="in">
   <h2>⚙️ System</h2>
   <p class="meta">Deine Reisen liegen nur auf diesem Gerät. Mit dem Backup sicherst du alles, auch deine Ausgaben, und kannst es auf einem anderen Gerät wieder einlesen.</p>
+  <button class="sec" onclick="$('sys').style.display='none';openOv()" style="width:100%;margin:4px 0">🗂️ Reiseübersicht (alle Reisen)</button>
   <button class="sec" onclick="$('sys').style.display='none';openTrip(db.cur)" style="width:100%;margin:4px 0">Aktuelle Reise bearbeiten</button>
   <button onclick="backup()" style="width:100%;margin:4px 0">Backup speichern (JSON)</button>
   <button class="sec" onclick="$('file').click()" style="width:100%;margin:4px 0">Backup importieren</button>
@@ -216,7 +216,6 @@ function money(v, c) {
 
 function render() {
   const t = T();
-  $("ovBtn").textContent = "🗂️ Reiseübersicht (" + db.trips.length + ")";
   renderStops();
   $("fab").style.display = t ? "block" : "none";
   $("curTrip").innerHTML = T() ? "Aktive Reise: " + esc(T().name) + " · <a href=\"#\" onclick=\"openTrip('" + T().id + "');return false\" style=\"color:var(--pr);font-weight:600\">✏️ bearbeiten / löschen</a>" : "";

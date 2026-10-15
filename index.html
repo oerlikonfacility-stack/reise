@@ -21,8 +21,8 @@ h1{margin:0;font-size:20px;line-height:1.2}
 header small{color:#c5d6e4}
 .lnk{background:none;border:0;color:#c5d6e4;text-decoration:underline;padding:4px 0;margin:0 12px 0 0;font-size:13px;font-weight:400}
 .stats{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.stat{background:rgba(255,255,255,.14);border-radius:10px;padding:6px 12px;font-size:14px}
-.stat b{font-size:18px;margin-right:4px}
+.stat{background:rgba(255,255,255,.14);border-radius:8px;padding:3px 8px;font-size:11px}
+.stat b{font-size:13px;margin-right:3px}
 main{max-width:760px;margin:auto;padding:12px 12px 96px}
 #fab{position:fixed;right:max(18px,calc(50% - 380px + 18px));bottom:calc(20px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;background:var(--pr);color:#fff;border:0;font-size:34px;line-height:1;padding:0;margin:0;box-shadow:0 4px 14px rgba(0,0,0,.35);z-index:5;display:none}
 #fab:active{transform:scale(.94)}
@@ -63,6 +63,7 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 #dlg p{white-space:pre-line;margin:0 0 14px;line-height:1.4}
 .stopbox{border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;background:var(--bg)}
 .tact{margin-top:8px}.chip.op{background:var(--pr);color:#fff;border-color:var(--pr)}.chip.dl{color:#c0392b;border-color:#c0392b}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.tc{min-width:0}.th{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--mu);margin-bottom:4px}.tools .pkadd input{min-width:0;width:100%;padding:8px 8px}.tools .pkadd button{padding:6px 11px}
 .simg{display:block;width:100%;max-width:200px;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin:6px 0}
 .pk{display:flex;align-items:center;gap:8px;padding:5px 2px;cursor:pointer}.pk .t{flex:1}.pk.done .t{text-decoration:line-through;color:var(--mu)}.pk .x{background:none;border:0;color:var(--mu);font-size:16px;padding:2px 8px;margin:0;width:auto}.pkadd{display:flex;gap:6px;margin-top:4px}.pkadd input{flex:1;min-width:0;padding:8px 10px;margin:0}.pkadd button{margin:0;padding:6px 14px;width:auto}
 .stopbox.canc{opacity:.65}.stopbox.canc b{text-decoration:line-through}
@@ -95,17 +96,10 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
   </div>
   <div id="stopsBox"></div>
 
-  <div class="day" style="margin:10px 0 6px"><span>💶 Ausgaben</span></div>
 
-  <div id="addExp" class="add">
-    <input id="eA" inputmode="decimal" placeholder="Betrag, z. B. 12,50" onkeydown="if(event.key==='Enter')addExp()">
-    <button onclick="addExp()" aria-label="Ausgabe hinzufügen">+</button>
-    <button class="sec" id="expUndo" onclick="delLastExp()" aria-label="Letzte Ausgabe löschen" style="display:none">↶</button>
-  </div>
 
-  <div id="list"></div>
-</main>
-<button id="fab" onclick="if(T())openStop(T().id,'')" aria-label="Neuer Eintrag">+</button>
+  </main>
+<button id="fab" onclick="if(T())openStop(T().id,'')" aria-label="Neuer Eintrag"><svg viewBox="0 0 24 24" width="32" height="32" fill="#fff" aria-hidden="true"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11h.5A1.5 1.5 0 0 1 21 12.5V17a1 1 0 0 1-1 1h-1a2 2 0 0 1-4 0H9a2 2 0 0 1-4 0H4a1 1 0 0 1-1-1v-4.5A1.5 1.5 0 0 1 4.5 11H5zm2.1 0h9.8l-1.1-3.2a.5.5 0 0 0-.5-.3H8.7a.5.5 0 0 0-.5.3L7.1 11zM7 15.2a1.2 1.2 0 1 0 0 .01zm10 0a1.2 1.2 0 1 0 0 .01z"/></svg></button>
 
 <div id="sheet"><div class="in">
   <h2 id="sTitle">Neue Reise</h2>
@@ -219,59 +213,38 @@ function render() {
   renderStops();
   $("fab").style.display = t ? "block" : "none";
   $("curTrip").innerHTML = T() ? "Aktive Reise: " + esc(T().name) + " · <a href=\"#\" onclick=\"openTrip('" + T().id + "');return false\" style=\"color:var(--pr);font-weight:600\">✏️ bearbeiten / löschen</a>" : "";
-  $("addExp").style.display = t ? "flex" : "none";
   if (!t) {
     $("stats").innerHTML = "";
     setHH();
-    $("list").innerHTML = `<div class="card"><p style="margin-top:0">Willkommen! Lege deine erste Reise an, danach kannst du Einträge, Packliste und Ausgaben eintragen.</p><button onclick="openTrip('')" style="width:100%;margin:0;font-size:18px">+ Neue Reise</button></div>`;
+    $("stopsBox").innerHTML = `<div class="card"><p style="margin-top:0">Willkommen! Lege deine erste Reise an, danach kannst du Einträge, Packliste und Ausgaben eintragen.</p><button onclick="openTrip('')" style="width:100%;margin:0;font-size:18px">+ Neue Reise</button></div>`;
     return;
   }
 
   const stopSum = t.stops.filter(o => !o.s && (o.z || o.a)).reduce((x, o) => x + (o.amt || 0), 0);
-  const total = t.exp.reduce((s, e) => s + e.a, 0) + stopSum;
-  const todaySum = t.exp.filter(e => e.d === today()).reduce((s, e) => s + e.a, 0);
-  let chips = `<span class="stat"><b>${money(total, t.cur)}</b>gesamt</span><span class="stat"><b>${money(todaySum, t.cur)}</b>heute</span>` + (stopSum > 0 ? `<span class="stat"><b>${money(stopSum, t.cur)}</b>davon Unterkunft</span>` : "");
+  const ae = allExp(t), total = ae.reduce((s, e) => s + e.a, 0) + stopSum;
+  const todaySum = ae.filter(e => e.d === today()).reduce((s, e) => s + e.a, 0);
+  let chips = `<span class="stat"><b>${money(total, t.cur)}</b>gesamt</span><span class="stat"><b>${money(todaySum, t.cur)}</b>heute</span>`;
   if (t.budget > 0) chips += `<span class="stat"><b>${money(t.budget - total, t.cur)}</b>übrig</span>`;
   if (t.start && t.start > today()) chips += `<span class="stat"><b>${Math.ceil((new Date(t.start + "T12:00:00") - new Date()) / 864e5)}</b>Tage bis Abreise</span>`;
   $("stats").innerHTML = chips;
   setHH();
 
-  let h = "";
-  {
-    const last = t.exp.slice().sort((a, b) => b.c - a.c)[0];
-    h = last ? `<div class="meta" style="margin:6px 4px">Zuletzt eingetragen: <b>${money(last.a, t.cur)}</b> · mit ↶ löschst du diese Eingabe.</div>`
-             : `<div class="card">Noch keine Ausgaben. Betrag eintippen und auf + tippen, die Beträge werden oben zusammengezählt.</div>`;
-    $("expUndo").style.display = last ? "" : "none";
-  }
-  $("list").innerHTML = h;
 }
 
 /* ---------- Hinzufügen, Abhaken, Löschen ---------- */
 
-function addExp() {
-  const t = T(), a = num($("eA").value);
-  if (!t) return;
-  if (!a) { alert("Bitte einen Betrag eingeben, z. B. 12,50"); $("eA").focus(); return; }
-  t.exp.push({id: uid(), a: a, n: "", d: today(), c: Date.now()});
-  if (!save()) t.exp.pop();
-  $("eA").value = "";
-  render();
-  $("eA").focus();
-}
-async function delLastExp() {
-  const t = T();
-  if (!t || !t.exp.length) return;
-  const last = t.exp.slice().sort((a, b) => b.c - a.c)[0];
-  if (!(await ask("Letzte Ausgabe (" + money(last.a, t.cur) + ") löschen?", "Löschen"))) return;
-  del("exp", last.id);
-}
 function migratePack(t) {
   if (t.pack && t.pack.length && t.stops.length) {
     const o = t.stops.slice().sort((a, b) => a.v.localeCompare(b.v))[0];
     o.pack = (o.pack || []).concat(t.pack);
     t.pack = [];
   }
-  t.stops.forEach(o => { if (!Array.isArray(o.pack)) o.pack = []; });
+  if (t.exp && t.exp.length && t.stops.length) {
+    const f = t.stops.slice().sort((a, b) => a.v.localeCompare(b.v))[0];
+    f.exp = (f.exp || []).concat(t.exp);
+    t.exp = [];
+  }
+  t.stops.forEach(o => { if (!Array.isArray(o.pack)) o.pack = []; if (!Array.isArray(o.exp)) o.exp = []; });
 }
 function findStop(tid, sid) {
   const t = db.trips.find(x => x.id === tid);
@@ -367,7 +340,7 @@ async function delTripOv(id) {
   let i = db.trips.findIndex(x => x.id === id);
   if (i < 0) return;
   const t = db.trips[i];
-  if (!(await ask("Reise „" + t.name + "“ löschen?\n\nDabei gehen " + t.exp.length + " Ausgaben, " + t.stops.length + " Orte, die Packlisten und Ausgaben dieser Reise verloren.", "Löschen"))) return;
+  if (!(await ask("Reise „" + t.name + "“ löschen?\n\nDabei gehen " + allExp(t).length + " Ausgaben, " + t.stops.length + " Orte, die Packlisten und Ausgaben dieser Reise verloren.", "Löschen"))) return;
   i = db.trips.findIndex(x => x.id === id);
   if (i < 0) return;
   db.trips.splice(i, 1);
@@ -432,10 +405,31 @@ function tripState(t) {
 function openOv() { renderOv(); $("ov").style.display = "block"; $("ov").scrollTop = 0; }
 function nightsOf(o) { return Math.max(0, Math.round((new Date(o.b + "T12:00:00") - new Date(o.v + "T12:00:00")) / 864e5)); }
 function packHtml(t, o) {
-  const pk = o.pack || [], done = pk.filter(x => x.d).length;
-  return `<div class="day" style="margin:10px 0 4px;font-size:13px"><span>🎒 Packliste</span><span>${pk.length ? done + " / " + pk.length : ""}</span></div>` +
-    pk.map(x => `<div class="pk${x.d ? " done" : ""}" onclick="togPk('${t.id}','${o.id}','${x.id}')"><span>${x.d ? "✅" : "⬜"}</span><span class="t">${esc(x.n)}</span><button class="x" onclick="event.stopPropagation();delPk('${t.id}','${o.id}','${x.id}')" aria-label="Löschen">✕</button></div>`).join("") +
-    `<div class="pkadd"><input placeholder="Was muss mit?" onkeydown="if(event.key==='Enter')addPk('${t.id}','${o.id}',this.nextElementSibling)"><button onclick="addPk('${t.id}','${o.id}',this)" aria-label="Hinzufügen">+</button></div>`;
+  const pk = o.pack || [], done = pk.filter(x => x.d).length, ex = o.exp || [];
+  const sum = ex.reduce((x, e) => x + e.a, 0);
+  return `<div class="tools"><div class="tc"><div class="th"><span>💶 Ausgaben</span><b>${sum > 0 ? money(sum, t.cur) : ""}</b></div>` +
+    `<div class="pkadd"><input inputmode="decimal" placeholder="Betrag" onkeydown="if(event.key==='Enter')addEx('${t.id}','${o.id}',this.nextElementSibling)"><button onclick="addEx('${t.id}','${o.id}',this)" aria-label="Ausgabe hinzufügen">+</button>${ex.length ? `<button class="sec" onclick="delLastEx('${t.id}','${o.id}')" aria-label="Letzte Ausgabe löschen">↶</button>` : ""}</div></div>` +
+    `<div class="tc"><div class="th"><span>🎒 Packliste</span><b>${pk.length ? done + " / " + pk.length : ""}</b></div>` +
+    `<div class="pkadd"><input placeholder="Was muss mit?" onkeydown="if(event.key==='Enter')addPk('${t.id}','${o.id}',this.nextElementSibling)"><button onclick="addPk('${t.id}','${o.id}',this)" aria-label="Hinzufügen">+</button></div></div></div>` +
+    pk.map(x => `<div class="pk${x.d ? " done" : ""}" onclick="togPk('${t.id}','${o.id}','${x.id}')"><span>${x.d ? "✅" : "⬜"}</span><span class="t">${esc(x.n)}</span><button class="x" onclick="event.stopPropagation();delPk('${t.id}','${o.id}','${x.id}')" aria-label="Löschen">✕</button></div>`).join("");
+}
+function addEx(tid, sid, btn) {
+  const o = findStop(tid, sid)[1], inp = btn.parentNode.querySelector("input"), a = num(inp.value);
+  if (!o) return;
+  if (!a) { alert("Bitte einen Betrag eingeben, z. B. 12,50"); inp.focus(); return; }
+  o.exp.push({id: uid(), a: a, d: today(), c: Date.now()});
+  save(); renderOv(); render();
+}
+async function delLastEx(tid, sid) {
+  const [t, o] = findStop(tid, sid);
+  if (!o || !o.exp.length) return;
+  const last = o.exp.slice().sort((x, y) => y.c - x.c)[0];
+  if (!(await ask("Letzte Ausgabe (" + money(last.a, t.cur) + ") bei „" + o.n + "“ löschen?", "Löschen"))) return;
+  o.exp = o.exp.filter(x => x.id !== last.id);
+  save(); renderOv(); render();
+}
+function allExp(t) {
+  return t.exp.concat(...t.stops.map(o => o.exp || []));
 }
 function stopsOf(t) {
   return t.stops.slice().sort((a, b) => a.v.localeCompare(b.v)).map(o => {
@@ -461,11 +455,11 @@ function renderOv() {
     if (!groups[i].length) return;
     h += `<div class="day"><span>${names[i]}</span><span>${groups[i].length}</span></div>`;
     h += groups[i].map(t => {
-      const sum = t.exp.reduce((x, e) => x + e.a, 0) + t.stops.filter(o => !o.s && (o.z || o.a)).reduce((x, o) => x + (o.amt || 0), 0);
+      const sum = allExp(t).reduce((x, e) => x + e.a, 0) + t.stops.filter(o => !o.s && (o.z || o.a)).reduce((x, o) => x + (o.amt || 0), 0);
       const when = t.start ? fd(t.start) + (t.end ? " – " + fd(t.end) : "") : "kein Termin";
       const total = t.stops.filter(o => !o.s).reduce((x, o) => x + (o.amt || 0), 0);
       const stopsHtml = stopsOf(t);
-      return `<div class="row${t.id === db.cur ? " now" : ""}" style="align-items:flex-start"><div class="t"><div onclick="pickTrip('${t.id}')" style="cursor:pointer"><b>${esc(t.name)}</b><small style="display:block;color:var(--mu);font-size:13px">${esc([t.dest && t.dest !== t.name ? t.dest : "", when].filter(Boolean).join(" · "))}<br>${t.exp.length} ${t.exp.length === 1 ? "Ausgabe" : "Ausgaben"} (${money(sum, t.cur)})</small></div><div class="day" style="margin:10px 0 0"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>${stopsHtml}</div></div>`;
+      return `<div class="row${t.id === db.cur ? " now" : ""}" style="align-items:flex-start"><div class="t"><div onclick="pickTrip('${t.id}')" style="cursor:pointer"><b>${esc(t.name)}</b><small style="display:block;color:var(--mu);font-size:13px">${esc([t.dest && t.dest !== t.name ? t.dest : "", when].filter(Boolean).join(" · "))}<br>${allExp(t).length} ${allExp(t).length === 1 ? "Ausgabe" : "Ausgaben"} (${money(sum, t.cur)})</small></div><div class="day" style="margin:10px 0 0"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>${stopsHtml}</div></div>`;
     }).join("");
   });
   $("ovList").innerHTML = h || `<div class="card">Noch keine Reisen angelegt.</div>`;
@@ -531,7 +525,7 @@ function saveStop() {
   const snapshot = JSON.stringify(db);
   const data = {n: n, v: v, b: b, amt: num($("s_amt").value) || 0, g: $("sG").checked, z: $("sZ").checked, a: $("sA").checked, s: $("sS").checked, img: stopImg};
   const o = stopCtx.id ? t.stops.find(x => x.id === stopCtx.id) : null;
-  if (o) Object.assign(o, data); else t.stops.push(Object.assign({id: uid(), pack: []}, data));
+  if (o) Object.assign(o, data); else t.stops.push(Object.assign({id: uid(), pack: [], exp: []}, data));
   migratePack(t);
   if (!save()) { db = JSON.parse(snapshot); return; }
   $("ssheet").style.display = "none";

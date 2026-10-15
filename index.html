@@ -60,6 +60,7 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 #dlg .box{background:var(--card);border-radius:14px;padding:18px;max-width:420px;width:100%}
 #dlg p{white-space:pre-line;margin:0 0 14px;line-height:1.4}
 .stopbox{border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;background:var(--bg)}
+.pk{display:flex;align-items:center;gap:8px;padding:5px 2px;cursor:pointer}.pk .t{flex:1}.pk.done .t{text-decoration:line-through;color:var(--mu)}.pk .x{background:none;border:0;color:var(--mu);font-size:16px;padding:2px 8px;margin:0;width:auto}.pkadd{display:flex;gap:6px;margin-top:4px}.pkadd input{flex:1;min-width:0;padding:8px 10px;margin:0}.pkadd button{margin:0;padding:6px 14px;width:auto}
 .stopbox.canc{opacity:.65}.stopbox.canc b{text-decoration:line-through}
 .row.canc{opacity:.65}.row.canc b{text-decoration:line-through}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:14px;margin:10px 0}
@@ -93,7 +94,6 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 
   <div class="tabs" id="tabs">
     <button data-t="exp" onclick="setTab('exp')">💶 Ausgaben</button>
-    <button data-t="pack" onclick="setTab('pack')">🎒 Packliste</button>
     <button data-t="plan" onclick="setTab('plan')">📅 Programm</button>
   </div>
 
@@ -101,10 +101,6 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
     <input id="eA" inputmode="decimal" placeholder="Betrag, z. B. 12,50" onkeydown="if(event.key==='Enter')addExp()">
     <button onclick="addExp()" aria-label="Ausgabe hinzufügen">+</button>
     <button class="sec" id="expUndo" onclick="delLastExp()" aria-label="Letzte Ausgabe löschen" style="display:none">↶</button>
-  </div>
-  <div id="addPack" class="add">
-    <input id="kN" placeholder="Was muss mit?" onkeydown="if(event.key==='Enter')addPack()">
-    <button onclick="addPack()" aria-label="Hinzufügen">+</button>
   </div>
   <div id="addPlan">
     <div class="add"><input id="pD" type="date"><input id="pT" type="time" style="max-width:120px"></div>
@@ -186,7 +182,7 @@ try {
   const s = JSON.parse(localStorage.getItem(KEY) || "null");
   if (s && Array.isArray(s.trips)) db = s;
 } catch (e) {}
-db.trips.forEach(t => { ["exp","pack","plan","stops"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; }); });
+db.trips.forEach(t => { ["exp","pack","plan","stops"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; }); migratePack(t); });
 if (!db.trips.some(t => t.id === db.cur)) db.cur = db.trips.length ? db.trips[0].id : "";
 
 const T = () => db.trips.find(t => t.id === db.cur);
@@ -224,7 +220,6 @@ function render() {
   $("curTrip").textContent = T() ? "Aktive Reise: " + T().name : "";
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === tab));
   $("addExp").style.display = tab === "exp" && t ? "flex" : "none";
-  $("addPack").style.display = tab === "pack" && t ? "flex" : "none";
   $("addPlan").style.display = tab === "plan" && t ? "block" : "none";
   if (!t) {
     $("stats").innerHTML = "";
@@ -248,12 +243,6 @@ function render() {
     h = last ? `<div class="meta" style="margin:6px 4px">Zuletzt eingetragen: <b>${money(last.a, t.cur)}</b> · mit ↶ löschst du diese Eingabe.</div>`
              : `<div class="card">Noch keine Ausgaben. Betrag eintippen und auf + tippen, die Beträge werden oben zusammengezählt.</div>`;
     $("expUndo").style.display = last ? "" : "none";
-  } else if (tab === "pack") {
-    const done = t.pack.filter(p => p.d).length;
-    h = (t.pack.length ? `<div class="day"><span>Gepackt</span><span>${done} / ${t.pack.length}</span></div>` : "") +
-      t.pack.slice().sort((a, b) => (a.d - b.d)).map(p =>
-        `<div class="row${p.d ? " done" : ""}" onclick="tog('pack','${p.id}')"><span>${p.d ? "✅" : "⬜"}</span><div class="t">${esc(p.n)}</div><button class="x" onclick="event.stopPropagation();del('pack','${p.id}')" aria-label="Löschen">✕</button></div>`).join("") ||
-      `<div class="card">Die Packliste ist leer. Tippe einen Gegenstand ein und dann auf +.</div>`;
   } else {
     const days = {};
     t.plan.forEach(p => (days[p.d] = days[p.d] || []).push(p));
@@ -285,14 +274,35 @@ async function delLastExp() {
   if (!(await ask("Letzte Ausgabe (" + money(last.a, t.cur) + ") löschen?", "Löschen"))) return;
   del("exp", last.id);
 }
-function addPack() {
-  const t = T(), n = $("kN").value.trim();
-  if (!t || !n) return;
-  t.pack.push({id: uid(), n: n, d: false});
-  if (!save()) t.pack.pop();
-  $("kN").value = "";
-  render();
-  $("kN").focus();
+function migratePack(t) {
+  if (t.pack && t.pack.length && t.stops.length) {
+    const o = t.stops.slice().sort((a, b) => a.v.localeCompare(b.v))[0];
+    o.pack = (o.pack || []).concat(t.pack);
+    t.pack = [];
+  }
+  t.stops.forEach(o => { if (!Array.isArray(o.pack)) o.pack = []; });
+}
+function findStop(tid, sid) {
+  const t = db.trips.find(x => x.id === tid);
+  return [t, t && t.stops.find(x => x.id === sid)];
+}
+function addPk(tid, sid, btn) {
+  const o = findStop(tid, sid)[1], inp = btn.parentNode.querySelector("input"), n = inp.value.trim();
+  if (!o || !n) return;
+  o.pack.push({id: uid(), n: n, d: false});
+  save(); renderOv(); render();
+}
+function togPk(tid, sid, pid) {
+  const o = findStop(tid, sid)[1], it = o && o.pack.find(x => x.id === pid);
+  if (!it) return;
+  it.d = !it.d;
+  save(); renderOv(); render();
+}
+function delPk(tid, sid, pid) {
+  const o = findStop(tid, sid)[1];
+  if (!o) return;
+  o.pack = o.pack.filter(x => x.id !== pid);
+  save(); renderOv(); render();
 }
 function addPlan() {
   const t = T(), n = $("pN").value.trim();
@@ -432,11 +442,17 @@ function tripState(t) {
 }
 function openOv() { renderOv(); $("ov").style.display = "block"; $("ov").scrollTop = 0; }
 function nightsOf(o) { return Math.max(0, Math.round((new Date(o.b + "T12:00:00") - new Date(o.v + "T12:00:00")) / 864e5)); }
+function packHtml(t, o) {
+  const pk = o.pack || [], done = pk.filter(x => x.d).length;
+  return `<div class="day" style="margin:10px 0 4px;font-size:13px"><span>🎒 Packliste</span><span>${pk.length ? done + " / " + pk.length : ""}</span></div>` +
+    pk.map(x => `<div class="pk${x.d ? " done" : ""}" onclick="togPk('${t.id}','${o.id}','${x.id}')"><span>${x.d ? "✅" : "⬜"}</span><span class="t">${esc(x.n)}</span><button class="x" onclick="event.stopPropagation();delPk('${t.id}','${o.id}','${x.id}')" aria-label="Löschen">✕</button></div>`).join("") +
+    `<div class="pkadd"><input placeholder="Was muss mit?" onkeydown="if(event.key==='Enter')addPk('${t.id}','${o.id}',this.nextElementSibling)"><button onclick="addPk('${t.id}','${o.id}',this)" aria-label="Hinzufügen">+</button></div>`;
+}
 function stopsOf(t) {
   return t.stops.slice().sort((a, b) => a.v.localeCompare(b.v)).map(o => {
     const chip = (k, c, label) => `<button class="chip ${c}${o[k] ? " on" : ""}" onclick="togStop('${t.id}','${o.id}','${k}')">${o[k] ? "✓ " : ""}${label}</button>`;
         const n = nightsOf(o);
-        return `<div class="stopbox${o.s ? " canc" : ""}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(o.n)}</b><b>${o.amt > 0 ? money(o.amt, t.cur) : ""}</b></div><small style="display:block;color:var(--mu);font-size:13px">${fd(o.v)} – ${fd(o.b)} · ${n} ${n === 1 ? "Nacht" : "Nächte"}</small><div>${chip("g","g","Gebucht")}${chip("z","z","Gezahlt")}${chip("a","a","Angezahlt")}${chip("s","s","Storniert")}</div><div style="display:flex;gap:6px;margin-top:6px"><button class="sec" onclick="openStop('${t.id}','${o.id}')" style="flex:1;margin:0;padding:8px">Bearbeiten</button><button class="sec" onclick="delStop('${t.id}','${o.id}')" style="margin:0;padding:8px 16px" aria-label="Eintrag löschen">✕</button></div></div>`;
+        return `<div class="stopbox${o.s ? " canc" : ""}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(o.n)}</b><b>${o.amt > 0 ? money(o.amt, t.cur) : ""}</b></div><small style="display:block;color:var(--mu);font-size:13px">${fd(o.v)} – ${fd(o.b)} · ${n} ${n === 1 ? "Nacht" : "Nächte"}</small><div>${chip("g","g","Gebucht")}${chip("z","z","Gezahlt")}${chip("a","a","Angezahlt")}${chip("s","s","Storniert")}</div>${packHtml(t, o)}<div style="display:flex;gap:6px;margin-top:6px"><button class="sec" onclick="openStop('${t.id}','${o.id}')" style="flex:1;margin:0;padding:8px">Bearbeiten</button><button class="sec" onclick="delStop('${t.id}','${o.id}')" style="margin:0;padding:8px 16px" aria-label="Eintrag löschen">✕</button></div></div>`;
   }).join("");
 }
 function renderStops() {
@@ -495,7 +511,8 @@ function saveStop() {
   const snapshot = JSON.stringify(db);
   const data = {n: n, v: v, b: b, amt: num($("s_amt").value) || 0, g: $("sG").checked, z: $("sZ").checked, a: $("sA").checked, s: $("sS").checked};
   const o = stopCtx.id ? t.stops.find(x => x.id === stopCtx.id) : null;
-  if (o) Object.assign(o, data); else t.stops.push(Object.assign({id: uid()}, data));
+  if (o) Object.assign(o, data); else t.stops.push(Object.assign({id: uid(), pack: []}, data));
+  migratePack(t);
   if (!save()) { db = JSON.parse(snapshot); return; }
   $("ssheet").style.display = "none";
   renderOv();
@@ -554,6 +571,7 @@ async function importFile(e) {
     d.trips.forEach(t => {
       if (!t || !t.id || !t.name || db.trips.some(x => x.id === t.id)) return;
       ["exp","pack","plan","stops"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
+      migratePack(t);
       db.trips.push(t); added++;
     });
     if (!db.cur && db.trips.length) db.cur = db.trips[0].id;

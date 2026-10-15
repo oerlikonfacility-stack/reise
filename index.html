@@ -60,6 +60,7 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 #dlg .box{background:var(--card);border-radius:14px;padding:18px;max-width:420px;width:100%}
 #dlg p{white-space:pre-line;margin:0 0 14px;line-height:1.4}
 .stopbox{border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;background:var(--bg)}
+.tact{margin-top:8px}.chip.op{background:var(--pr);color:#fff;border-color:var(--pr)}.chip.dl{color:#c0392b;border-color:#c0392b}
 .simg{display:block;width:100%;max-width:200px;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin:6px 0}
 .pk{display:flex;align-items:center;gap:8px;padding:5px 2px;cursor:pointer}.pk .t{flex:1}.pk.done .t{text-decoration:line-through;color:var(--mu)}.pk .x{background:none;border:0;color:var(--mu);font-size:16px;padding:2px 8px;margin:0;width:auto}.pkadd{display:flex;gap:6px;margin-top:4px}.pkadd input{flex:1;min-width:0;padding:8px 10px;margin:0}.pkadd button{margin:0;padding:6px 14px;width:auto}
 .stopbox.canc{opacity:.65}.stopbox.canc b{text-decoration:line-through}
@@ -134,7 +135,7 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 
 <div id="ov"><div class="in">
   <h2>🗂️ Reiseübersicht</h2>
-  <p class="meta">Alle deine Reisen mit ihren Einträgen (Ort / Unterkunft, Zeitraum, Betrag, Haken). „Öffnen“ zeigt Ausgaben, Packliste und Programm.</p>
+  <p class="meta">Alle deine Reisen mit ihren Einträgen (Ort / Unterkunft, Zeitraum, Betrag, Haken). „Öffnen“ macht die Reise zur aktiven Reise auf der Startseite.</p>
   <div id="ovList"></div>
   <button onclick="$('ov').style.display='none';openTrip('');fromOv=true" style="width:100%;margin:10px 0 4px">+ Neue Reise</button>
   <button class="sec" onclick="$('ov').style.display='none'" style="width:100%;margin:4px 0">Schließen</button>
@@ -219,7 +220,7 @@ function render() {
   if (!t) {
     $("stats").innerHTML = "";
     setHH();
-    $("list").innerHTML = `<div class="card"><p style="margin-top:0">Willkommen! Lege deine erste Reise an, danach kannst du Orte, Ausgaben, Packliste und Programm eintragen.</p><button onclick="openTrip('')" style="width:100%;margin:0;font-size:18px">+ Neue Reise</button></div>`;
+    $("list").innerHTML = `<div class="card"><p style="margin-top:0">Willkommen! Lege deine erste Reise an, danach kannst du Einträge, Packliste und Ausgaben eintragen.</p><button onclick="openTrip('')" style="width:100%;margin:0;font-size:18px">+ Neue Reise</button></div>`;
     return;
   }
 
@@ -363,7 +364,7 @@ async function delTripOv(id) {
   let i = db.trips.findIndex(x => x.id === id);
   if (i < 0) return;
   const t = db.trips[i];
-  if (!(await ask("Reise „" + t.name + "“ löschen?\n\nDabei gehen " + t.exp.length + " Ausgaben, " + t.stops.length + " Orte, die Packliste und das Programm dieser Reise verloren.", "Löschen"))) return;
+  if (!(await ask("Reise „" + t.name + "“ löschen?\n\nDabei gehen " + t.exp.length + " Ausgaben, " + t.stops.length + " Orte, die Packlisten und Ausgaben dieser Reise verloren.", "Löschen"))) return;
   i = db.trips.findIndex(x => x.id === id);
   if (i < 0) return;
   db.trips.splice(i, 1);
@@ -407,7 +408,7 @@ function saveTrip() {
 }
 async function delTrip() {
   const t = db.trips.find(x => x.id === $("f_id").value) || T();
-  if (!t || !(await ask("Reise „" + t.name + "“ mit allen Ausgaben, Packliste und Programm wirklich löschen?", "Löschen"))) return;
+  if (!t || !(await ask("Reise „" + t.name + "“ mit allen Einträgen, Packlisten und Ausgaben wirklich löschen?", "Löschen"))) return;
   db.trips = db.trips.filter(x => x.id !== t.id);
   db.cur = db.trips.length ? db.trips[0].id : "";
   save();
@@ -437,14 +438,14 @@ function stopsOf(t) {
   return t.stops.slice().sort((a, b) => a.v.localeCompare(b.v)).map(o => {
     const chip = (k, c, label) => `<button class="chip ${c}${o[k] ? " on" : ""}" onclick="togStop('${t.id}','${o.id}','${k}')">${o[k] ? "✓ " : ""}${label}</button>`;
         const n = nightsOf(o);
-        return `<div class="stopbox${o.s ? " canc" : ""}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(o.n)}</b><b>${o.amt > 0 ? money(o.amt, t.cur) : ""}</b></div><small style="display:block;color:var(--mu);font-size:13px">${fd(o.v)} – ${fd(o.b)} · ${n} ${n === 1 ? "Nacht" : "Nächte"}</small>${o.img ? `<img class="simg" src="${o.img}" alt="">` : ""}<div>${chip("g","g","Gebucht")}${chip("z","z","Gezahlt")}${chip("a","a","Angezahlt")}${chip("s","s","Storniert")}</div>${packHtml(t, o)}<div style="display:flex;gap:6px;margin-top:6px"><button class="sec" onclick="openStop('${t.id}','${o.id}')" style="flex:1;margin:0;padding:8px">Bearbeiten</button><button class="sec" onclick="delStop('${t.id}','${o.id}')" style="margin:0;padding:8px 16px" aria-label="Eintrag löschen">✕</button></div></div>`;
+        return `<div class="stopbox${o.s ? " canc" : ""}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(o.n)}</b><b>${o.amt > 0 ? money(o.amt, t.cur) : ""}</b></div><small style="display:block;color:var(--mu);font-size:13px">${fd(o.v)} – ${fd(o.b)} · ${n} ${n === 1 ? "Nacht" : "Nächte"}</small>${o.img ? `<img class="simg" src="${o.img}" alt="">` : ""}<div>${chip("g","g","Gebucht")}${chip("z","z","Gezahlt")}${chip("a","a","Angezahlt")}${chip("s","s","Storniert")}<button class="chip" onclick="openStop('${t.id}','${o.id}')">✏️ Bearbeiten</button><button class="chip dl" onclick="delStop('${t.id}','${o.id}')" aria-label="Eintrag löschen">✕</button></div>${packHtml(t, o)}</div>`;
   }).join("");
 }
 function renderStops() {
   const t = T(), el = $("stopsBox");
   if (!t) { el.innerHTML = ""; return; }
   const total = t.stops.filter(o => !o.s).reduce((x, o) => x + (o.amt || 0), 0);
-  el.innerHTML = `<div class="day" style="margin:4px 0 6px"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>` + stopsOf(t) + `<button class="sec" onclick="openStop('${t.id}','')" style="width:100%;margin:6px 0 10px;padding:10px">+ Eintrag (Ort / Unterkunft)</button>`;
+  el.innerHTML = `<div class="day" style="margin:4px 0 6px"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>` + stopsOf(t) + `<button class="chip op" onclick="openStop('${t.id}','')">+ Eintrag</button>`;
 }
 function renderOv() {
   const names = ["📍 Läuft gerade", "🗓️ Geplant", "✅ Vergangen", "Ohne Datum"];
@@ -461,7 +462,7 @@ function renderOv() {
       const when = t.start ? fd(t.start) + (t.end ? " – " + fd(t.end) : "") : "kein Termin";
       const total = t.stops.filter(o => !o.s).reduce((x, o) => x + (o.amt || 0), 0);
       const stopsHtml = stopsOf(t);
-      return `<div class="row${t.id === db.cur ? " now" : ""}" style="align-items:flex-start"><div class="t"><b>${esc(t.name)}</b><small style="display:block;color:var(--mu);font-size:13px">${esc([t.dest && t.dest !== t.name ? t.dest : "", when].filter(Boolean).join(" · "))}<br>${t.exp.length} ${t.exp.length === 1 ? "Ausgabe" : "Ausgaben"} (${money(sum, t.cur)})</small><div class="day" style="margin:10px 0 0"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>${stopsHtml}<button class="sec" onclick="openStop('${t.id}','')" style="width:100%;margin:6px 0 0;padding:10px">+ Eintrag (Ort / Unterkunft)</button><div style="display:flex;gap:6px;margin-top:12px"><button onclick="pickTrip('${t.id}')" style="flex:1;margin:0;padding:10px 6px">Öffnen</button><button class="sec" onclick="editFromOv('${t.id}')" style="flex:1;margin:0;padding:10px 6px">Bearbeiten</button><button class="del" onclick="delTripOv('${t.id}')" style="flex:1;margin:0;padding:10px 6px">Löschen</button></div></div></div>`;
+      return `<div class="row${t.id === db.cur ? " now" : ""}" style="align-items:flex-start"><div class="t"><b>${esc(t.name)}</b><small style="display:block;color:var(--mu);font-size:13px">${esc([t.dest && t.dest !== t.name ? t.dest : "", when].filter(Boolean).join(" · "))}<br>${t.exp.length} ${t.exp.length === 1 ? "Ausgabe" : "Ausgaben"} (${money(sum, t.cur)})</small><div class="day" style="margin:10px 0 0"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>${stopsHtml}<button class="chip op" onclick="openStop('${t.id}','')">+ Eintrag</button><div class="tact"><button class="chip op" onclick="pickTrip('${t.id}')">Öffnen</button><button class="chip" onclick="editFromOv('${t.id}')">Bearbeiten</button><button class="chip dl" onclick="delTripOv('${t.id}')">Löschen</button></div></div></div>`;
     }).join("");
   });
   $("ovList").innerHTML = h || `<div class="card">Noch keine Reisen angelegt.</div>`;

@@ -60,6 +60,7 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 #dlg .box{background:var(--card);border-radius:14px;padding:18px;max-width:420px;width:100%}
 #dlg p{white-space:pre-line;margin:0 0 14px;line-height:1.4}
 .stopbox{border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;background:var(--bg)}
+.simg{display:block;width:100%;max-width:200px;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin:6px 0}
 .pk{display:flex;align-items:center;gap:8px;padding:5px 2px;cursor:pointer}.pk .t{flex:1}.pk.done .t{text-decoration:line-through;color:var(--mu)}.pk .x{background:none;border:0;color:var(--mu);font-size:16px;padding:2px 8px;margin:0;width:auto}.pkadd{display:flex;gap:6px;margin-top:4px}.pkadd input{flex:1;min-width:0;padding:8px 10px;margin:0}.pkadd button{margin:0;padding:6px 14px;width:auto}
 .stopbox.canc{opacity:.65}.stopbox.canc b{text-decoration:line-through}
 .row.canc{opacity:.65}.row.canc b{text-decoration:line-through}
@@ -163,6 +164,10 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
   </div>
   <label for="s_amt">Betrag</label>
   <input id="s_amt" inputmode="decimal" placeholder="z. B. 450">
+  <label>Bild (4:3)</label>
+  <img id="s_prev" class="simg" alt="" hidden>
+  <input id="s_file" type="file" accept="image/*" hidden>
+  <div class="two"><button class="sec" type="button" onclick="$('s_file').click()" style="margin:0">📷 Bild wählen</button><button class="sec" type="button" id="s_rm" onclick="setStopImg('')" style="margin:0">Bild entfernen</button></div>
   <button onclick="saveStop()">Speichern</button>
   <button class="sec" onclick="$('ssheet').style.display='none'">Abbrechen</button>
 </div></div>
@@ -452,7 +457,7 @@ function stopsOf(t) {
   return t.stops.slice().sort((a, b) => a.v.localeCompare(b.v)).map(o => {
     const chip = (k, c, label) => `<button class="chip ${c}${o[k] ? " on" : ""}" onclick="togStop('${t.id}','${o.id}','${k}')">${o[k] ? "✓ " : ""}${label}</button>`;
         const n = nightsOf(o);
-        return `<div class="stopbox${o.s ? " canc" : ""}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(o.n)}</b><b>${o.amt > 0 ? money(o.amt, t.cur) : ""}</b></div><small style="display:block;color:var(--mu);font-size:13px">${fd(o.v)} – ${fd(o.b)} · ${n} ${n === 1 ? "Nacht" : "Nächte"}</small><div>${chip("g","g","Gebucht")}${chip("z","z","Gezahlt")}${chip("a","a","Angezahlt")}${chip("s","s","Storniert")}</div>${packHtml(t, o)}<div style="display:flex;gap:6px;margin-top:6px"><button class="sec" onclick="openStop('${t.id}','${o.id}')" style="flex:1;margin:0;padding:8px">Bearbeiten</button><button class="sec" onclick="delStop('${t.id}','${o.id}')" style="margin:0;padding:8px 16px" aria-label="Eintrag löschen">✕</button></div></div>`;
+        return `<div class="stopbox${o.s ? " canc" : ""}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(o.n)}</b><b>${o.amt > 0 ? money(o.amt, t.cur) : ""}</b></div><small style="display:block;color:var(--mu);font-size:13px">${fd(o.v)} – ${fd(o.b)} · ${n} ${n === 1 ? "Nacht" : "Nächte"}</small>${o.img ? `<img class="simg" src="${o.img}" alt="">` : ""}<div>${chip("g","g","Gebucht")}${chip("z","z","Gezahlt")}${chip("a","a","Angezahlt")}${chip("s","s","Storniert")}</div>${packHtml(t, o)}<div style="display:flex;gap:6px;margin-top:6px"><button class="sec" onclick="openStop('${t.id}','${o.id}')" style="flex:1;margin:0;padding:8px">Bearbeiten</button><button class="sec" onclick="delStop('${t.id}','${o.id}')" style="margin:0;padding:8px 16px" aria-label="Eintrag löschen">✕</button></div></div>`;
   }).join("");
 }
 function renderStops() {
@@ -485,6 +490,36 @@ function renderOv() {
 /* ---------- Einträge (Orte / Unterkünfte) mit Haken und Betrag ---------- */
 
 let stopCtx = null;
+let stopImg = "";
+function setStopImg(d) {
+  stopImg = d || "";
+  $("s_prev").hidden = !stopImg;
+  if (stopImg) $("s_prev").src = stopImg;
+  $("s_rm").style.display = stopImg ? "" : "none";
+}
+function crop43(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const i = new Image();
+      i.onload = () => {
+        let sw = i.width, sh = i.height;
+        if (sw / sh > 4 / 3) sw = sh * 4 / 3; else sh = sw * 3 / 4;
+        const c = document.createElement("canvas");
+        c.width = 480; c.height = 360;
+        c.getContext("2d").drawImage(i, (i.width - sw) / 2, (i.height - sh) / 2, sw, sh, 0, 0, 480, 360);
+        res(c.toDataURL("image/jpeg", 0.72));
+      };
+      i.onerror = rej; i.src = r.result;
+    };
+    r.onerror = rej; r.readAsDataURL(file);
+  });
+}
+$("s_file").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try { setStopImg(await crop43(f)); } catch (x) { alert("Das Bild konnte nicht gelesen werden."); }
+});
 function openStop(tid, id) {
   const t = db.trips.find(x => x.id === tid);
   if (!t) return;
@@ -496,6 +531,7 @@ function openStop(tid, id) {
   $("s_v").value = o ? o.v : (last ? last.b : t.start || "");
   $("s_b").value = o ? o.b : (last ? "" : t.end || "");
   $("s_amt").value = o && o.amt ? String(o.amt).replace(".", ",") : "";
+  setStopImg(o && o.img || "");
   $("sG").checked = !!(o && o.g); $("sZ").checked = !!(o && o.z); $("sA").checked = !!(o && o.a); $("sS").checked = !!(o && o.s);
   $("ssheet").style.display = "block";
   $("ssheet").scrollTop = 0;
@@ -509,7 +545,7 @@ function saveStop() {
   if (!v || !b) { alert("Bitte Von- und Bis-Datum angeben."); return; }
   if (b < v) { alert("Das Bis-Datum liegt vor dem Von-Datum."); return; }
   const snapshot = JSON.stringify(db);
-  const data = {n: n, v: v, b: b, amt: num($("s_amt").value) || 0, g: $("sG").checked, z: $("sZ").checked, a: $("sA").checked, s: $("sS").checked};
+  const data = {n: n, v: v, b: b, amt: num($("s_amt").value) || 0, g: $("sG").checked, z: $("sZ").checked, a: $("sA").checked, s: $("sS").checked, img: stopImg};
   const o = stopCtx.id ? t.stops.find(x => x.id === stopCtx.id) : null;
   if (o) Object.assign(o, data); else t.stops.push(Object.assign({id: uid(), pack: []}, data));
   migratePack(t);

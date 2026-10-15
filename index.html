@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17324d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:,">
+<title>Peter &amp; Ilkes Reisen</title>
+<style>
+:root{--bg:#f1f4f7;--card:#fff;--tx:#182431;--mu:#667581;--bd:#dce3e9;--pr:#245d86;--hd:#17324d;--sec:#e0e8ef}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1720;--card:#18232f;--tx:#e8eef4;--mu:#93a4b3;--bd:#27384a;--pr:#3b8bc4;--hd:#0b2236;--sec:#223446}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px system-ui,sans-serif;padding-bottom:90px}
+header{position:sticky;top:0;z-index:12;box-shadow:0 2px 8px rgba(0,0,0,.25);background:var(--hd);color:#fff;padding:14px 16px 12px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+.hrow{display:flex;align-items:center;gap:14px}
+.avatar{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.85);background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;flex:none;font-size:28px}
+.hrow{position:relative}.palm{margin-left:auto;align-self:flex-start;font-size:34px;line-height:1}
+.avatar img{width:100%;height:100%;object-fit:cover}
+h1{margin:0;font-size:20px;line-height:1.2}
+header small{color:#c5d6e4}
+.lnk{background:none;border:0;color:#c5d6e4;text-decoration:underline;padding:4px 0;margin:0 12px 0 0;font-size:13px;font-weight:400}
+.stats{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.14);border-radius:10px;padding:6px 12px;font-size:14px}
+.stat b{font-size:18px;margin-right:4px}
+main{max-width:760px;margin:auto;padding:12px}
+input,select,button{font:inherit;padding:12px;border-radius:10px;color:var(--tx)}
+input,select{width:100%;border:1px solid var(--bd);background:var(--card);margin:4px 0 10px}
+button{border:0;background:var(--pr);color:#fff;font-weight:600;cursor:pointer;margin:3px}
+button.sec{background:var(--sec);color:var(--tx)}
+button.del{background:#c0392b}
+label{font-weight:600;font-size:14px}
+.add{display:flex;gap:6px;align-items:stretch}
+.add input,.add select{margin:0}
+.add>div{min-width:0}
+input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
+.add select{flex:1}
+.add button{margin:0;width:56px;font-size:28px;padding:0;flex:none}
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs button{flex:1;margin:0;padding:10px 1px;font-size:13px;white-space:nowrap;background:var(--sec);color:var(--tx)}
+.tabs button.on{background:var(--pr);color:#fff}
+.row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bd);border-left:6px solid var(--pr);border-radius:12px;padding:10px 12px;margin:8px 0}
+.row .t{flex:1;overflow-wrap:anywhere}
+.row .a{font-weight:700;white-space:nowrap}
+.row .x{background:none;color:var(--mu);padding:6px 10px;margin:0;font-size:18px}
+.row.done{opacity:.6}.row.done .t{text-decoration:line-through}
+.day{font-weight:700;color:var(--mu);margin:14px 4px 2px;display:flex;justify-content:space-between}
+.meta{color:var(--mu);font-size:13px}
+.stop .t small{display:block;color:var(--mu);font-size:13px}
+.row.now{border-left-color:#2a9a57;box-shadow:0 0 0 2px rgba(42,154,87,.35)}
+.chks{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.chk{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;font-size:14px;font-weight:600;cursor:pointer}
+.chk input{width:20px;height:20px;margin:0;padding:0;flex:none}
+.chip{background:transparent;color:var(--mu);border:1px solid var(--bd);padding:4px 10px;margin:6px 6px 0 0;font-size:12px;border-radius:99px;font-weight:600}
+.chip.on.g{background:rgba(59,139,196,.2);color:#2f7fb8;border-color:#2f7fb8}
+.chip.on.z{background:rgba(46,160,90,.2);color:#2a9a57;border-color:#2a9a57}
+.chip.on.a{background:rgba(232,137,43,.2);color:#c46d12;border-color:#c46d12}
+.chip.on.s{background:rgba(214,69,69,.2);color:#d64545;border-color:#d64545}
+#dlg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;align-items:center;justify-content:center;padding:20px}
+#dlg .box{background:var(--card);border-radius:14px;padding:18px;max-width:420px;width:100%}
+#dlg p{white-space:pre-line;margin:0 0 14px;line-height:1.4}
+.stopbox{border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:8px 0;background:var(--bg)}
+.stopbox.canc{opacity:.65}.stopbox.canc b{text-decoration:line-through}
+.row.canc{opacity:.65}.row.canc b{text-decoration:line-through}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:14px;margin:10px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#sheet,#sys,#ov,#ssheet{display:none;position:fixed;left:0;right:0;bottom:0;top:var(--hh,0px);background:var(--bg);overflow:auto;z-index:10}
+.in{max-width:760px;margin:auto;padding:14px;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+#snack{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));background:#222;color:#fff;border-radius:12px;padding:8px 14px;display:none;align-items:center;justify-content:space-between;z-index:20}
+#snack button{background:none;color:#7fc1ff;margin:0;padding:8px 10px}
+</style>
+</head>
+<body>
+<header id="hdr">
+  <div class="hrow">
+    <label class="avatar" for="selfFile" title="Bild wählen"><img id="selfImg" alt="Mein Bild" hidden><span id="selfPh">📷</span></label>
+    <input id="selfFile" type="file" accept="image/*" hidden>
+    <div>
+      <h1>🧳 Peter &amp; Ilkes Reisen 🌴</h1>
+      <button class="lnk" id="selfChg" onclick="$('selfFile').click()">Bild hinzufügen</button><button class="lnk" id="selfRm" onclick="rmSelf()" hidden>entfernen</button>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<main>
+  <div class="add" style="margin-bottom:4px">
+    <button class="sec" id="ovBtn" onclick="openOv()" style="flex:1;width:auto;margin:0;padding:12px 6px;font-size:15px">🗂️ Reiseübersicht</button>
+    <button class="sec" onclick="$('sys').style.display='block'" aria-label="System" style="font-size:22px">⚙️</button>
+  </div>
+  <div id="curTrip" class="meta" style="margin:0 4px 10px"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-t="exp" onclick="setTab('exp')">💶 Ausgaben</button>
+    <button data-t="pack" onclick="setTab('pack')">🎒 Packliste</button>
+    <button data-t="plan" onclick="setTab('plan')">📅 Programm</button>
+  </div>
+
+  <div id="addExp" class="add">
+    <input id="eA" inputmode="decimal" placeholder="Betrag, z. B. 12,50" onkeydown="if(event.key==='Enter')addExp()">
+    <button onclick="addExp()" aria-label="Ausgabe hinzufügen">+</button>
+    <button class="sec" id="expUndo" onclick="delLastExp()" aria-label="Letzte Ausgabe löschen" style="display:none">↶</button>
+  </div>
+  <div id="addPack" class="add">
+    <input id="kN" placeholder="Was muss mit?" onkeydown="if(event.key==='Enter')addPack()">
+    <button onclick="addPack()" aria-label="Hinzufügen">+</button>
+  </div>
+  <div id="addPlan">
+    <div class="add"><input id="pD" type="date"><input id="pT" type="time" style="max-width:120px"></div>
+    <div class="add" style="margin-top:6px"><input id="pN" placeholder="Programmpunkt" onkeydown="if(event.key==='Enter')addPlan()"><button onclick="addPlan()" aria-label="Hinzufügen">+</button></div>
+  </div>
+
+  <div id="list"></div>
+</main>
+
+<div id="sheet"><div class="in">
+  <h2 id="sTitle">Neue Reise</h2>
+  <input id="f_id" type="hidden">
+  <label for="f_dest">Ziel</label>
+  <input id="f_dest" placeholder="z. B. Gardasee">
+  <div class="two">
+    <div><label for="f_start">Von</label><input id="f_start" type="date"></div>
+    <div><label for="f_end">Bis</label><input id="f_end" type="date"></div>
+  </div>
+  <div class="two">
+    <div><label for="f_cur">Währung</label><select id="f_cur"></select></div>
+    <div><label for="f_budget">Budget (optional)</label><input id="f_budget" inputmode="decimal" placeholder="z. B. 1500"></div>
+  </div>
+  <button onclick="saveTrip()">Speichern</button>
+  <button class="sec" onclick="closeTrip()">Abbrechen</button>
+  <button class="del" id="delTrip" onclick="delTrip()">Reise löschen</button>
+</div></div>
+
+<div id="sys"><div class="in">
+  <h2>⚙️ System</h2>
+  <p class="meta">Deine Reisen liegen nur auf diesem Gerät. Mit dem Backup sicherst du alles, auch deine Ausgaben, und kannst es auf einem anderen Gerät wieder einlesen.</p>
+  <button class="sec" onclick="$('sys').style.display='none';openTrip(db.cur)" style="width:100%;margin:4px 0">Aktuelle Reise bearbeiten</button>
+  <button onclick="backup()" style="width:100%;margin:4px 0">Backup speichern (JSON)</button>
+  <button class="sec" onclick="$('file').click()" style="width:100%;margin:4px 0">Backup importieren</button>
+  <input id="file" type="file" accept=".json,application/json" hidden onchange="importFile(event)">
+  <button class="sec" onclick="$('sys').style.display='none'" style="width:100%;margin:14px 0 0">Schließen</button>
+</div></div>
+
+<div id="ov"><div class="in">
+  <h2>🗂️ Reiseübersicht</h2>
+  <p class="meta">Alle deine Reisen mit ihren Einträgen (Ort / Unterkunft, Zeitraum, Betrag, Haken). „Öffnen“ zeigt Ausgaben, Packliste und Programm.</p>
+  <div id="ovList"></div>
+  <button onclick="$('ov').style.display='none';openTrip('');fromOv=true" style="width:100%;margin:10px 0 4px">+ Neue Reise</button>
+  <button class="sec" onclick="$('ov').style.display='none'" style="width:100%;margin:4px 0">Schließen</button>
+</div></div>
+
+<div id="ssheet"><div class="in">
+  <h2 id="ssTitle">Neuer Eintrag</h2>
+  <label for="s_name">Ort / Unterkunft *</label>
+  <input id="s_name" placeholder="z. B. Hotel Gardasee">
+  <div class="two">
+    <div><label for="s_v">Von</label><input id="s_v" type="date"></div>
+    <div><label for="s_b">Bis</label><input id="s_b" type="date"></div>
+  </div>
+  <label>Buchungsstatus</label>
+  <div class="chks">
+    <label class="chk"><input type="checkbox" id="sG"> Gebucht</label>
+    <label class="chk"><input type="checkbox" id="sZ"> Gezahlt</label>
+    <label class="chk"><input type="checkbox" id="sA"> Angezahlt</label>
+    <label class="chk"><input type="checkbox" id="sS"> Storniert</label>
+  </div>
+  <label for="s_amt">Betrag</label>
+  <input id="s_amt" inputmode="decimal" placeholder="z. B. 450">
+  <button onclick="saveStop()">Speichern</button>
+  <button class="sec" onclick="$('ssheet').style.display='none'">Abbrechen</button>
+</div></div>
+
+<div id="dlg"><div class="box"><p id="dlgMsg"></p><div class="two"><button class="sec" id="dlgNo" style="margin:0">Abbrechen</button><button class="del" id="dlgYes" style="margin:0">OK</button></div></div></div>
+
+<div id="snack"><span id="snackTxt"></span><button onclick="undoDel()">Rückgängig</button></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const KEY = "petersReise", SELFK = "petersReiseProfil";
+const CUR = ["EUR","CHF","USD","GBP","PLN","CZK","HUF","SEK","NOK","DKK","TRY"];
+let db = {cur: "", trips: []}, tab = "exp", undo = null, undoTimer = 0;
+
+try {
+  const s = JSON.parse(localStorage.getItem(KEY) || "null");
+  if (s && Array.isArray(s.trips)) db = s;
+} catch (e) {}
+db.trips.forEach(t => { ["exp","pack","plan","stops"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; }); });
+if (!db.trips.some(t => t.id === db.cur)) db.cur = db.trips.length ? db.trips[0].id : "";
+
+const T = () => db.trips.find(t => t.id === db.cur);
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); return true; }
+  catch (e) { alert("Speichern nicht möglich: Der Speicher ist voll. Bitte ein Backup erstellen."); return false; }
+}
+const esc = v => String(v || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const today = () => new Date().toLocaleDateString("sv-SE");
+const fd = s => s ? s.split("-").reverse().join(".") : "";
+const wd = s => new Date(s + "T12:00:00").toLocaleDateString("de-DE", {weekday: "short", day: "2-digit", month: "2-digit"});
+function ask(msg, yes) {
+  return new Promise(res => {
+    $("dlgMsg").textContent = msg;
+    $("dlgYes").textContent = yes || "OK";
+    $("dlg").style.display = "flex";
+    const done = v => { $("dlg").style.display = "none"; $("dlgYes").onclick = null; $("dlgNo").onclick = null; res(v); };
+    $("dlgYes").onclick = () => done(true);
+    $("dlgNo").onclick = () => done(false);
+  });
+}
+const num = v => { const n = parseFloat(String(v || "").trim().replace(/\s/g, "").replace(",", ".")); return isFinite(n) ? Math.round(n * 100) / 100 : NaN; };
+function money(v, c) {
+  try { return new Intl.NumberFormat("de-DE", {style: "currency", currency: c || "EUR"}).format(v); }
+  catch (e) { return v.toFixed(2) + " " + c; }
+}
+
+function setTab(t) { tab = t; render(); }
+
+function render() {
+  const t = T();
+  $("ovBtn").textContent = "🗂️ Reiseübersicht (" + db.trips.length + ")";
+  $("curTrip").textContent = T() ? "Aktive Reise: " + T().name : "";
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === tab));
+  $("addExp").style.display = tab === "exp" && t ? "flex" : "none";
+  $("addPack").style.display = tab === "pack" && t ? "flex" : "none";
+  $("addPlan").style.display = tab === "plan" && t ? "block" : "none";
+  if (!t) {
+    $("stats").innerHTML = "";
+    setHH();
+    $("list").innerHTML = `<div class="card"><p style="margin-top:0">Willkommen! Lege deine erste Reise an, danach kannst du Orte, Ausgaben, Packliste und Programm eintragen.</p><button onclick="openTrip('')" style="width:100%;margin:0;font-size:18px">+ Neue Reise</button></div>`;
+    return;
+  }
+
+  const stopSum = t.stops.filter(o => !o.s && (o.z || o.a)).reduce((x, o) => x + (o.amt || 0), 0);
+  const total = t.exp.reduce((s, e) => s + e.a, 0) + stopSum;
+  const todaySum = t.exp.filter(e => e.d === today()).reduce((s, e) => s + e.a, 0);
+  let chips = `<span class="stat"><b>${money(total, t.cur)}</b>gesamt</span><span class="stat"><b>${money(todaySum, t.cur)}</b>heute</span>` + (stopSum > 0 ? `<span class="stat"><b>${money(stopSum, t.cur)}</b>davon Unterkunft</span>` : "");
+  if (t.budget > 0) chips += `<span class="stat"><b>${money(t.budget - total, t.cur)}</b>übrig</span>`;
+  if (t.start && t.start > today()) chips += `<span class="stat"><b>${Math.ceil((new Date(t.start + "T12:00:00") - new Date()) / 864e5)}</b>Tage bis Abreise</span>`;
+  $("stats").innerHTML = chips;
+  setHH();
+
+  let h = "";
+  if (tab === "exp") {
+    const last = t.exp.slice().sort((a, b) => b.c - a.c)[0];
+    h = last ? `<div class="meta" style="margin:6px 4px">Zuletzt eingetragen: <b>${money(last.a, t.cur)}</b> · mit ↶ löschst du diese Eingabe.</div>`
+             : `<div class="card">Noch keine Ausgaben. Betrag eintippen und auf + tippen, die Beträge werden oben zusammengezählt.</div>`;
+    $("expUndo").style.display = last ? "" : "none";
+  } else if (tab === "pack") {
+    const done = t.pack.filter(p => p.d).length;
+    h = (t.pack.length ? `<div class="day"><span>Gepackt</span><span>${done} / ${t.pack.length}</span></div>` : "") +
+      t.pack.slice().sort((a, b) => (a.d - b.d)).map(p =>
+        `<div class="row${p.d ? " done" : ""}" onclick="tog('pack','${p.id}')"><span>${p.d ? "✅" : "⬜"}</span><div class="t">${esc(p.n)}</div><button class="x" onclick="event.stopPropagation();del('pack','${p.id}')" aria-label="Löschen">✕</button></div>`).join("") ||
+      `<div class="card">Die Packliste ist leer. Tippe einen Gegenstand ein und dann auf +.</div>`;
+  } else {
+    const days = {};
+    t.plan.forEach(p => (days[p.d] = days[p.d] || []).push(p));
+    h = Object.keys(days).sort().map(d =>
+      `<div class="day"><span>${wd(d)}</span></div>` +
+      days[d].sort((a, b) => (a.t || "").localeCompare(b.t || "")).map(p =>
+        `<div class="row${p.x ? " done" : ""}" onclick="tog('plan','${p.id}')"><span>${p.x ? "✅" : "📍"}</span><div class="t">${p.t ? "<b>" + esc(p.t) + "</b> " : ""}${esc(p.n)}</div><button class="x" onclick="event.stopPropagation();del('plan','${p.id}')" aria-label="Löschen">✕</button></div>`).join("")
+    ).join("") || `<div class="card">Noch kein Programm. Wähle ein Datum, trage einen Punkt ein und tippe auf +.</div>`;
+  }
+  $("list").innerHTML = h;
+}
+
+/* ---------- Hinzufügen, Abhaken, Löschen ---------- */
+
+function addExp() {
+  const t = T(), a = num($("eA").value);
+  if (!t) return;
+  if (!a) { alert("Bitte einen Betrag eingeben, z. B. 12,50"); $("eA").focus(); return; }
+  t.exp.push({id: uid(), a: a, n: "", d: today(), c: Date.now()});
+  if (!save()) t.exp.pop();
+  $("eA").value = "";
+  render();
+  $("eA").focus();
+}
+async function delLastExp() {
+  const t = T();
+  if (!t || !t.exp.length) return;
+  const last = t.exp.slice().sort((a, b) => b.c - a.c)[0];
+  if (!(await ask("Letzte Ausgabe (" + money(last.a, t.cur) + ") löschen?", "Löschen"))) return;
+  del("exp", last.id);
+}
+function addPack() {
+  const t = T(), n = $("kN").value.trim();
+  if (!t || !n) return;
+  t.pack.push({id: uid(), n: n, d: false});
+  if (!save()) t.pack.pop();
+  $("kN").value = "";
+  render();
+  $("kN").focus();
+}
+function addPlan() {
+  const t = T(), n = $("pN").value.trim();
+  if (!t) return;
+  if (!n) { $("pN").focus(); return; }
+  t.plan.push({id: uid(), d: $("pD").value || today(), t: $("pT").value, n: n, x: false});
+  if (!save()) t.plan.pop();
+  $("pN").value = ""; $("pT").value = "";
+  render();
+  $("pN").focus();
+}
+function tog(kind, id) {
+  const it = T()[kind].find(x => x.id === id);
+  if (!it) return;
+  if (kind === "pack") it.d = !it.d; else it.x = !it.x;
+  save();
+  render();
+}
+function del(kind, id) {
+  const arr = T()[kind], i = arr.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const item = arr.splice(i, 1)[0];
+  save();
+  render();
+  undo = {kind: kind, item: item, i: i, trip: db.cur};
+  $("snackTxt").textContent = kind === "exp" ? "Ausgabe gelöscht" : kind === "stops" ? "Ort gelöscht" : "Eintrag gelöscht";
+  $("snack").style.display = "flex";
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { $("snack").style.display = "none"; undo = null; }, 7000);
+}
+function undoDel() {
+  if (!undo) return;
+  if (undo.kind === "trip") {
+    db.trips.splice(Math.min(undo.i, db.trips.length), 0, undo.item);
+    if (undo.wasCur) db.cur = undo.item.id;
+    save();
+    undo = null;
+    $("snack").style.display = "none";
+    render();
+    if ($("ov").style.display === "block") renderOv();
+    return;
+  }
+  const t = db.trips.find(x => x.id === undo.trip);
+  if (t) { t[undo.kind].splice(Math.min(undo.i, t[undo.kind].length), 0, undo.item); save(); }
+  undo = null;
+  $("snack").style.display = "none";
+  render();
+  if ($("ov").style.display === "block") renderOv();
+}
+
+/* ---------- Reisen ---------- */
+
+$("f_cur").innerHTML = CUR.map(c => `<option>${c}</option>`).join("");
+
+let fromOv = false;
+function openTrip(id) {
+  fromOv = false;
+  const t = db.trips.find(x => x.id === id);
+  $("sTitle").textContent = t ? "Reise bearbeiten" : "Neue Reise";
+  $("f_id").value = t ? t.id : "";
+  $("f_dest").value = t ? t.dest || t.name || "" : "";
+  $("f_start").value = t ? t.start || "" : "";
+  $("f_end").value = t ? t.end || "" : "";
+  $("f_cur").value = t ? t.cur : "EUR";
+  $("f_budget").value = t && t.budget ? String(t.budget).replace(".", ",") : "";
+  $("delTrip").style.display = t ? "" : "none";
+  $("sheet").style.display = "block";
+  $("sheet").scrollTop = 0;
+  if (!t) $("f_dest").focus();
+}
+function closeTrip() {
+  $("sheet").style.display = "none";
+  if (fromOv) { fromOv = false; openOv(); }
+}
+function editFromOv(id) {
+  $("ov").style.display = "none";
+  openTrip(id);
+  fromOv = true;
+}
+async function delTripOv(id) {
+  let i = db.trips.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const t = db.trips[i];
+  if (!(await ask("Reise „" + t.name + "“ löschen?\n\nDabei gehen " + t.exp.length + " Ausgaben, " + t.stops.length + " Orte, die Packliste und das Programm dieser Reise verloren.", "Löschen"))) return;
+  i = db.trips.findIndex(x => x.id === id);
+  if (i < 0) return;
+  db.trips.splice(i, 1);
+  const wasCur = db.cur === id;
+  if (wasCur) db.cur = db.trips.length ? db.trips[0].id : "";
+  save();
+  renderOv();
+  render();
+  undo = {kind: "trip", item: t, i: i, wasCur: wasCur};
+  $("snackTxt").textContent = "Reise gelöscht";
+  $("snack").style.display = "flex";
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { $("snack").style.display = "none"; undo = null; }, 7000);
+}
+function saveTrip() {
+  const dest = $("f_dest").value.trim(), fs = $("f_start").value, fe = $("f_end").value;
+  // Die Reise heißt wie ihr Ziel; ohne Ziel dient der Zeitraum als Name
+  const name = dest || (fs ? fd(fs) + (fe ? " – " + fd(fe) : "") : "");
+  if (!name) { alert("Bitte ein Ziel oder einen Zeitraum eintragen."); $("f_dest").focus(); return; }
+  if ($("f_start").value && $("f_end").value && $("f_end").value < $("f_start").value) { alert("Das Bis-Datum liegt vor dem Von-Datum. Bitte die Daten prüfen."); return; }
+  const snapshot = JSON.stringify(db);
+  let t = db.trips.find(x => x.id === $("f_id").value);
+  const isNew = !t;
+  if (!t) { t = {id: uid(), exp: [], pack: [], plan: [], stops: []}; db.trips.push(t); }
+  Object.assign(t, {name: name, dest: dest, start: $("f_start").value, end: $("f_end").value, cur: $("f_cur").value, budget: num($("f_budget").value) || 0});
+  if (isNew && (!fromOv || !db.cur)) db.cur = t.id;
+  if (!save()) { db = JSON.parse(snapshot); return; }
+  if (t.start && !$("pD").value) $("pD").value = t.start;
+  $("sheet").style.display = "none";
+  render();
+  if (fromOv) { fromOv = false; openOv(); }
+}
+async function delTrip() {
+  const t = db.trips.find(x => x.id === $("f_id").value) || T();
+  if (!t || !(await ask("Reise „" + t.name + "“ mit allen Ausgaben, Packliste und Programm wirklich löschen?", "Löschen"))) return;
+  db.trips = db.trips.filter(x => x.id !== t.id);
+  db.cur = db.trips.length ? db.trips[0].id : "";
+  save();
+  $("sheet").style.display = "none";
+  render();
+  if (fromOv) { fromOv = false; openOv(); }
+}
+
+/* ---------- Reiseübersicht ---------- */
+
+function tripState(t) {
+  const n = today();
+  if (!t.start) return 3;                       // ohne Datum
+  if (t.start > n) return 1;                    // geplant
+  if (!t.end || t.end >= n) return 0;           // läuft gerade
+  return 2;                                     // vorbei
+}
+function openOv() { renderOv(); $("ov").style.display = "block"; $("ov").scrollTop = 0; }
+function nightsOf(o) { return Math.max(0, Math.round((new Date(o.b + "T12:00:00") - new Date(o.v + "T12:00:00")) / 864e5)); }
+function renderOv() {
+  const names = ["📍 Läuft gerade", "🗓️ Geplant", "✅ Vergangen", "Ohne Datum"];
+  const groups = [[], [], [], []];
+  db.trips.forEach(t => groups[tripState(t)].push(t));
+  groups[2].sort((a, b) => (b.start || "").localeCompare(a.start || ""));
+  [0, 1, 3].forEach(i => groups[i].sort((a, b) => (a.start || "").localeCompare(b.start || "")));
+  let h = "";
+  [0, 1, 2, 3].forEach(i => {
+    if (!groups[i].length) return;
+    h += `<div class="day"><span>${names[i]}</span><span>${groups[i].length}</span></div>`;
+    h += groups[i].map(t => {
+      const sum = t.exp.reduce((x, e) => x + e.a, 0) + t.stops.filter(o => !o.s && (o.z || o.a)).reduce((x, o) => x + (o.amt || 0), 0);
+      const when = t.start ? fd(t.start) + (t.end ? " – " + fd(t.end) : "") : "kein Termin";
+      const total = t.stops.filter(o => !o.s).reduce((x, o) => x + (o.amt || 0), 0);
+      const stopsHtml = t.stops.slice().sort((a, b) => a.v.localeCompare(b.v)).map(o => {
+        const chip = (k, c, label) => `<button class="chip ${c}${o[k] ? " on" : ""}" onclick="togStop('${t.id}','${o.id}','${k}')">${o[k] ? "✓ " : ""}${label}</button>`;
+        const n = nightsOf(o);
+        return `<div class="stopbox${o.s ? " canc" : ""}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(o.n)}</b><b>${o.amt > 0 ? money(o.amt, t.cur) : ""}</b></div><small style="display:block;color:var(--mu);font-size:13px">${fd(o.v)} – ${fd(o.b)} · ${n} ${n === 1 ? "Nacht" : "Nächte"}</small><div>${chip("g","g","Gebucht")}${chip("z","z","Gezahlt")}${chip("a","a","Angezahlt")}${chip("s","s","Storniert")}</div><div style="display:flex;gap:6px;margin-top:6px"><button class="sec" onclick="openStop('${t.id}','${o.id}')" style="flex:1;margin:0;padding:8px">Bearbeiten</button><button class="sec" onclick="delStop('${t.id}','${o.id}')" style="margin:0;padding:8px 16px" aria-label="Eintrag löschen">✕</button></div></div>`;
+      }).join("");
+      return `<div class="row${t.id === db.cur ? " now" : ""}" style="align-items:flex-start"><div class="t"><b>${esc(t.name)}</b><small style="display:block;color:var(--mu);font-size:13px">${esc([t.dest && t.dest !== t.name ? t.dest : "", when].filter(Boolean).join(" · "))}<br>${t.exp.length} ${t.exp.length === 1 ? "Ausgabe" : "Ausgaben"} (${money(sum, t.cur)})</small><div class="day" style="margin:10px 0 0"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>${stopsHtml}<button class="sec" onclick="openStop('${t.id}','')" style="width:100%;margin:6px 0 0;padding:10px">+ Eintrag (Ort / Unterkunft)</button><div style="display:flex;gap:6px;margin-top:12px"><button onclick="pickTrip('${t.id}')" style="flex:1;margin:0;padding:10px 6px">Öffnen</button><button class="sec" onclick="editFromOv('${t.id}')" style="flex:1;margin:0;padding:10px 6px">Bearbeiten</button><button class="del" onclick="delTripOv('${t.id}')" style="flex:1;margin:0;padding:10px 6px">Löschen</button></div></div></div>`;
+    }).join("");
+  });
+  $("ovList").innerHTML = h || `<div class="card">Noch keine Reisen angelegt.</div>`;
+}
+
+/* ---------- Einträge (Orte / Unterkünfte) mit Haken und Betrag ---------- */
+
+let stopCtx = null;
+function openStop(tid, id) {
+  const t = db.trips.find(x => x.id === tid);
+  if (!t) return;
+  const o = id ? t.stops.find(x => x.id === id) : null;
+  stopCtx = {tid: tid, id: id};
+  const last = t.stops.slice().sort((a, b) => a.v.localeCompare(b.v)).pop();
+  $("ssTitle").textContent = (o ? "Eintrag bearbeiten" : "Neuer Eintrag") + " · " + t.name;
+  $("s_name").value = o ? o.n : "";
+  $("s_v").value = o ? o.v : (last ? last.b : t.start || "");
+  $("s_b").value = o ? o.b : (last ? "" : t.end || "");
+  $("s_amt").value = o && o.amt ? String(o.amt).replace(".", ",") : "";
+  $("sG").checked = !!(o && o.g); $("sZ").checked = !!(o && o.z); $("sA").checked = !!(o && o.a); $("sS").checked = !!(o && o.s);
+  $("ssheet").style.display = "block";
+  $("ssheet").scrollTop = 0;
+  if (!o) $("s_name").focus();
+}
+function saveStop() {
+  const t = db.trips.find(x => x.id === stopCtx.tid);
+  if (!t) return;
+  const n = $("s_name").value.trim(), v = $("s_v").value, b = $("s_b").value;
+  if (!n) { alert("Bitte einen Ort oder eine Unterkunft eintragen."); $("s_name").focus(); return; }
+  if (!v || !b) { alert("Bitte Von- und Bis-Datum angeben."); return; }
+  if (b < v) { alert("Das Bis-Datum liegt vor dem Von-Datum."); return; }
+  const snapshot = JSON.stringify(db);
+  const data = {n: n, v: v, b: b, amt: num($("s_amt").value) || 0, g: $("sG").checked, z: $("sZ").checked, a: $("sA").checked, s: $("sS").checked};
+  const o = stopCtx.id ? t.stops.find(x => x.id === stopCtx.id) : null;
+  if (o) Object.assign(o, data); else t.stops.push(Object.assign({id: uid()}, data));
+  if (!save()) { db = JSON.parse(snapshot); return; }
+  $("ssheet").style.display = "none";
+  renderOv();
+  render();
+}
+function togStop(tid, id, k) {
+  const t = db.trips.find(x => x.id === tid), o = t && t.stops.find(x => x.id === id);
+  if (!o) return;
+  o[k] = !o[k];
+  save();
+  renderOv();
+}
+async function delStop(tid, id) {
+  const t = db.trips.find(x => x.id === tid);
+  if (!t) return;
+  let i = t.stops.findIndex(x => x.id === id);
+  if (i < 0) return;
+  if (!(await ask("Eintrag „" + t.stops[i].n + "“ löschen?", "Löschen"))) return;
+  i = t.stops.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const item = t.stops.splice(i, 1)[0];
+  save();
+  renderOv();
+  undo = {kind: "stops", item: item, i: i, trip: tid};
+  $("snackTxt").textContent = "Eintrag gelöscht";
+  $("snack").style.display = "flex";
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { $("snack").style.display = "none"; undo = null; }, 7000);
+}
+function pickTrip(id) {
+  db.cur = id; save();
+  $("ov").style.display = "none";
+  render();
+}
+
+/* ---------- Backup ---------- */
+
+function backup() {
+  const blob = new Blob([JSON.stringify({format: "PeterIlkeReisen", ...db}, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = "reisen-backup-" + today() + ".json"; a.style.display = "none";
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 10000);
+}
+async function importFile(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!d || !Array.isArray(d.trips)) throw new Error("Ungültige Backup-Datei");
+    if (!(await ask(d.trips.length + " Reise(n) gefunden. Importieren?", "Importieren"))) return;
+    const snapshot = JSON.stringify(db);
+    let added = 0;
+    d.trips.forEach(t => {
+      if (!t || !t.id || !t.name || db.trips.some(x => x.id === t.id)) return;
+      ["exp","pack","plan","stops"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
+      db.trips.push(t); added++;
+    });
+    if (!db.cur && db.trips.length) db.cur = db.trips[0].id;
+    if (!save()) { db = JSON.parse(snapshot); return; }
+    render();
+    alert(added + " Reise(n) importiert" + (d.trips.length - added ? ", " + (d.trips.length - added) + " bereits vorhanden." : "."));
+  } catch (err) {
+    alert("Import fehlgeschlagen: " + err.message);
+  } finally {
+    e.target.value = "";
+  }
+}
+
+/* ---------- Eigenes Bild ---------- */
+
+function shrink(file, max, q) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const i = new Image();
+      i.onload = () => {
+        const s = Math.min(1, max / Math.max(i.width, i.height)), c = document.createElement("canvas");
+        c.width = Math.round(i.width * s); c.height = Math.round(i.height * s);
+        c.getContext("2d").drawImage(i, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", q));
+      };
+      i.onerror = rej; i.src = r.result;
+    };
+    r.onerror = rej; r.readAsDataURL(file);
+  });
+}
+function showSelf(src) {
+  $("selfImg").hidden = !src;
+  if (src) $("selfImg").src = src; else $("selfImg").removeAttribute("src");
+  $("selfPh").hidden = !!src;
+  $("selfRm").hidden = !src;
+  $("selfChg").textContent = src ? "Bild ändern" : "Bild hinzufügen";
+}
+try {
+  const v = localStorage.getItem(SELFK) || "";
+  showSelf(/^data:image\/jpeg;base64,/.test(v) ? v : "");
+} catch (e) { showSelf(""); }
+$("selfFile").addEventListener("change", async function () {
+  const f = this.files && this.files[0];
+  if (!f) return;
+  try { const d = await shrink(f, 320, 0.8); localStorage.setItem(SELFK, d); showSelf(d); }
+  catch (e) { alert("Das Bild konnte nicht gespeichert werden."); }
+  this.value = "";
+});
+function rmSelf() { try { localStorage.removeItem(SELFK); } catch (e) {} showSelf(""); }
+
+/* ---------- Start ---------- */
+
+$("pD").value = today();
+function setHH() { document.documentElement.style.setProperty("--hh", $("hdr").offsetHeight + "px"); }
+render();
+setHH();
+window.addEventListener("resize", setHH);
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+</script>
+</body>
+</html>

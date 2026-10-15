@@ -127,6 +127,14 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
   <button onclick="backup()" style="width:100%;margin:4px 0">Backup speichern (JSON)</button>
   <button class="sec" onclick="$('file').click()" style="width:100%;margin:4px 0">Backup importieren</button>
   <input id="file" type="file" accept=".json,application/json" hidden onchange="importFile(event)">
+  <div class="day" style="margin:16px 0 4px"><span>☁️ Sync (Firebase)</span><span id="syncState">aus</span></div>
+  <p class="meta" id="syncInfo">Gleicht deine Reisen zwischen Handy und PC ab. Nutzt dasselbe Firebase-Konto wie dein Ticketsystem.</p>
+  <div id="syncCfgBox"><label for="s_cfg">Firebase-Konfiguration (nur beim ersten Mal, falls nicht schon vom Ticketsystem bekannt)</label>
+  <textarea id="s_cfg" rows="4" placeholder='const firebaseConfig = { apiKey: "…", authDomain: "…", projectId: "…", appId: "…" };'></textarea></div>
+  <label for="s_mail">E-Mail</label><input id="s_mail" type="email" autocomplete="username">
+  <label for="s_pw">Passwort</label><input id="s_pw" type="password" autocomplete="current-password">
+  <button onclick="connectSync()" style="width:100%;margin:6px 0">Verbinden</button>
+  <button class="sec" onclick="disconnectSync()" style="width:100%;margin:4px 0">Sync ausschalten</button>
   <button class="sec" onclick="$('sys').style.display='none'" style="width:100%;margin:14px 0 0">Schließen</button>
 </div></div>
 
@@ -183,8 +191,10 @@ if (!db.trips.some(t => t.id === db.cur)) db.cur = db.trips.length ? db.trips[0]
 
 const T = () => db.trips.find(t => t.id === db.cur);
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(db)); return true; }
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
   catch (e) { alert("Speichern nicht möglich: Der Speicher ist voll. Bitte ein Backup erstellen."); return false; }
+  try { syncLocal(); } catch (e) {}
+  return true;
 }
 const esc = v => String(v || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -637,11 +647,140 @@ $("selfFile").addEventListener("change", async function () {
 });
 function rmSelf() { try { localStorage.removeItem(SELFK); } catch (e) {} showSelf(""); }
 
+/* ---------- Sync (Firebase, pro Reise abgeglichen) ---------- */
+
+const SC = "petersSyncCfg", SMAIL = "petersSyncMail", SM = "petersReiseSyncMeta";
+let cfg = null, meta = {}, fdb = null, col = null, unsub = null;
+try { cfg = JSON.parse(localStorage.getItem(SC) || "null"); } catch (e) {}
+try { meta = JSON.parse(localStorage.getItem(SM) || "{}"); } catch (e) {}
+const saveMeta = () => { try { localStorage.setItem(SM, JSON.stringify(meta)); } catch (e) {} };
+const hs = str => { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return h; };
+function setState(txt) {
+  $("syncState").textContent = txt;
+  $("syncCfgBox").style.display = cfg && cfg.apiKey ? "none" : "";
+}
+function syncLocal() {
+  const seen = new Set();
+  db.trips.forEach(t => {
+    seen.add(t.id);
+    const h = hs(JSON.stringify(t)), m = meta[t.id];
+    if (!m || m.h !== h || m.del) meta[t.id] = {h: h, u: Date.now(), p: 1};
+  });
+  Object.keys(meta).forEach(id => {
+    if (!seen.has(id) && !meta[id].del) meta[id] = {h: 0, u: Date.now(), p: 1, del: true};
+  });
+  saveMeta();
+  pushPending();
+}
+function pushPending() {
+  if (!col) return;
+  Object.keys(meta).forEach(id => {
+    const m = meta[id];
+    if (!m.p) return;
+    let d = "";
+    if (!m.del) {
+      const t = db.trips.find(x => x.id === id);
+      if (!t) return;
+      d = JSON.stringify(t);
+    }
+    col.doc(id).set({d: d, upd: m.u, del: !!m.del})
+      .then(() => { if (meta[id] && meta[id].u === m.u) { meta[id].p = 0; saveMeta(); } setState("synchronisiert"); })
+      .catch(e => setState("Fehler: " + (e.code || e.message)));
+  });
+}
+function applyRemote(id, r) {
+  const m = meta[id];
+  if (m && m.u >= r.upd) return false;
+  if (r.del) {
+    db.trips = db.trips.filter(x => x.id !== id);
+    meta[id] = {h: 0, u: r.upd, p: 0, del: true};
+    return true;
+  }
+  let t;
+  try { t = JSON.parse(r.d); } catch (e) { return false; }
+  if (!t || !t.id) return false;
+  ["exp","pack","plan","stops"].forEach(k => { if (!Array.isArray(t[k])) t[k] = []; });
+  migratePack(t);
+  const i = db.trips.findIndex(y => y.id === id);
+  if (i >= 0) db.trips[i] = t; else db.trips.push(t);
+  meta[id] = {h: hs(JSON.stringify(t)), u: r.upd, p: 0};
+  return true;
+}
+function startListen(user) {
+  col = fdb.collection("users").doc(user.uid).collection("reisen");
+  syncLocal();
+  unsub = col.onSnapshot(snap => {
+    let changed = false;
+    snap.docChanges().forEach(c => { if (c.type !== "removed" && applyRemote(c.doc.id, c.doc.data())) changed = true; });
+    if (changed) {
+      if (!db.trips.some(t => t.id === db.cur)) db.cur = db.trips.length ? db.trips[0].id : "";
+      saveMeta();
+      try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+      render();
+      if ($("ov").style.display === "block") renderOv();
+    }
+    setState(snap.metadata.fromCache ? "offline (lokal)" : "synchronisiert");
+  }, e => setState("Fehler: " + (e.code || e.message)));
+}
+const loadScript = src => new Promise((ok, no) => {
+  const el = document.createElement("script");
+  el.src = src; el.onload = ok;
+  el.onerror = () => no(new Error("Firebase konnte nicht geladen werden (kein Internet?)"));
+  document.head.appendChild(el);
+});
+async function initSync() {
+  if (!cfg || !cfg.apiKey || fdb) { setState(cfg && cfg.apiKey ? "…" : "aus"); return; }
+  try {
+    const B = "https://www.gstatic.com/firebasejs/10.12.2/";
+    await loadScript(B + "firebase-app-compat.js");
+    await Promise.all([loadScript(B + "firebase-auth-compat.js"), loadScript(B + "firebase-firestore-compat.js")]);
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    fdb = firebase.firestore();
+    firebase.auth().onAuthStateChanged(u => {
+      if (unsub) { unsub(); unsub = null; }
+      if (u) startListen(u); else { col = null; setState("nicht angemeldet"); }
+    });
+  } catch (e) { setState("offline (lokal)"); }
+}
+async function connectSync() {
+  const c = {};
+  $("s_cfg").value.replace(/(\w+)\s*:\s*["']([^"']*)["']/g, (m, k, v) => { c[k] = v; return m; });
+  if (c.apiKey && c.projectId && (!cfg || cfg.apiKey !== c.apiKey)) {
+    cfg = c;
+    localStorage.setItem(SC, JSON.stringify(c));
+  }
+  if (!cfg || !cfg.apiKey) { alert("Bitte den Block firebaseConfig einfügen."); return; }
+  const mail = $("s_mail").value.trim(), pw = $("s_pw").value;
+  if (!mail || !pw) { alert("Bitte E-Mail und Passwort eingeben."); return; }
+  setState("verbinde …");
+  try {
+    await initSync();
+    if (!fdb) throw new Error("Firebase nicht erreichbar");
+    await firebase.auth().signInWithEmailAndPassword(mail, pw);
+    localStorage.setItem(SMAIL, mail);
+    $("s_pw").value = ""; $("s_cfg").value = "";
+  } catch (e) {
+    alert("Anmeldung fehlgeschlagen: " + (e.code || e.message));
+    setState("nicht angemeldet");
+  }
+}
+async function disconnectSync() {
+  if (!(await ask("Synchronisierung ausschalten? Die Reisen auf diesem Gerät bleiben erhalten.", "Ausschalten"))) return;
+  try { if (unsub) unsub(); } catch (e) {}
+  localStorage.removeItem(SM);
+  col = null; unsub = null; meta = {};
+  setState("aus");
+  location.reload();
+}
+$("s_mail").value = localStorage.getItem(SMAIL) || "";
+
 /* ---------- Start ---------- */
 
 function setHH() { document.documentElement.style.setProperty("--hh", $("hdr").offsetHeight + "px"); }
 render();
 setHH();
+setState("aus");
+initSync();
 window.addEventListener("resize", setHH);
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
 </script>

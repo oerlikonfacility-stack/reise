@@ -224,7 +224,7 @@ function money(v, c) {
 function render() {
   const t = T();
   renderStops();
-  $("fab").style.display = t ? "block" : "none";
+  $("fab").style.display = "none";
   $("curTrip").innerHTML = T() ? "Aktive Reise: " + esc(T().name) + " · <a href=\"#\" onclick=\"openTrip('" + T().id + "');return false\" style=\"color:var(--pr);font-weight:600\">✏️ bearbeiten / löschen</a>" : "";
   if (!t) {
     $("stats").innerHTML = "";
@@ -452,7 +452,7 @@ function renderStops() {
   const t = T(), el = $("stopsBox");
   if (!t) { el.innerHTML = ""; return; }
   const total = t.stops.filter(o => !o.s).reduce((x, o) => x + (o.amt || 0), 0);
-  el.innerHTML = `<div class="day" style="margin:4px 0 6px"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div>` + stopsOf(t);
+  el.innerHTML = `<div class="day" style="margin:4px 0 6px"><span>Einträge</span><span>${total > 0 ? "Betrag " + money(total, t.cur) : ""}</span></div><button onclick="openStop('${t.id}','')" style="width:100%;margin:0 0 6px;font-size:18px;padding:14px;border-radius:14px">🚗 + Neuer Eintrag</button>` + stopsOf(t);
 }
 function renderOv() {
   const names = ["📍 Läuft gerade", "🗓️ Geplant", "✅ Vergangen", "Ohne Datum"];

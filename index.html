@@ -66,6 +66,9 @@ input[type=date],input[type=time]{min-width:0;padding:12px 6px;font-size:15px}
 .tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.tc{min-width:0}.th{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--mu);margin-bottom:4px}.tools .pkadd input{min-width:0;width:100%;padding:8px 8px}.tools .pkadd button{padding:6px 11px}
 .simg{display:block;width:100%;max-width:200px;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin:6px 0}
 .pk{display:flex;align-items:center;gap:8px;padding:5px 2px;cursor:pointer}.pk .t{flex:1}.pk.done .t{text-decoration:line-through;color:var(--mu)}.pk .x{background:none;border:0;color:var(--mu);font-size:16px;padding:2px 8px;margin:0;width:auto}.pkadd{display:flex;gap:6px;margin-top:4px}.pkadd input{flex:1;min-width:0;padding:8px 10px;margin:0}.pkadd button{margin:0;padding:6px 14px;width:auto}
+.exbox{margin-top:12px}.exbox .th{display:flex;justify-content:space-between;font-size:17px;font-weight:700;color:var(--mu);margin-bottom:6px}
+.exadd{display:flex;gap:10px;align-items:stretch}.exadd input{flex:1;min-width:0;margin:0;padding:10px 14px;font-size:26px;font-weight:600;border-radius:18px}.exadd button{margin:0;width:112px;height:112px;font-size:80px;line-height:1;padding:0 0 8px;flex:none;border-radius:24px;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.exundo{margin:8px 0 0;width:100%;padding:12px;font-size:16px;border-radius:14px}
 .stopbox.canc{opacity:.65}.stopbox.canc b{text-decoration:line-through}
 .row.canc{opacity:.65}.row.canc b{text-decoration:line-through}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:14px;margin:10px 0}
@@ -226,7 +229,7 @@ function render() {
   if (!t) {
     $("stats").innerHTML = "";
     setHH();
-    $("stopsBox").innerHTML = `<div class="card"><p style="margin-top:0">Willkommen! Lege deine erste Reise an, danach kannst du Einträge, Packliste und Ausgaben eintragen.</p><button onclick="openTrip('')" style="width:100%;margin:0;font-size:18px">+ Neue Reise</button></div>`;
+    $("stopsBox").innerHTML = `<div class="card"><p style="margin-top:0">Willkommen! Lege deine erste Reise an, danach kannst du Einträge und Ausgaben eintragen.</p><button onclick="openTrip('')" style="width:100%;margin:0;font-size:18px">+ Neue Reise</button></div>`;
     return;
   }
 
@@ -415,13 +418,10 @@ function tripState(t) {
 function openOv() { renderOv(); $("ov").style.display = "block"; $("ov").scrollTop = 0; }
 function nightsOf(o) { return Math.max(0, Math.round((new Date(o.b + "T12:00:00") - new Date(o.v + "T12:00:00")) / 864e5)); }
 function packHtml(t, o) {
-  const pk = o.pack || [], done = pk.filter(x => x.d).length, ex = o.exp || [];
+  const ex = o.exp || [];
   const sum = ex.reduce((x, e) => x + e.a, 0);
-  return `<div class="tools"><div class="tc"><div class="th"><span>💶 Ausgaben</span><b>${sum > 0 ? money(sum, t.cur) : ""}</b></div>` +
-    `<div class="pkadd"><input inputmode="decimal" placeholder="Betrag" onkeydown="if(event.key==='Enter')addEx('${t.id}','${o.id}',this.nextElementSibling)"><button onclick="addEx('${t.id}','${o.id}',this)" aria-label="Ausgabe hinzufügen">+</button>${ex.length ? `<button class="sec" onclick="delLastEx('${t.id}','${o.id}')" aria-label="Letzte Ausgabe löschen">↶</button>` : ""}</div></div>` +
-    `<div class="tc"><div class="th"><span>🎒 Packliste</span><b>${pk.length ? done + " / " + pk.length : ""}</b></div>` +
-    `<div class="pkadd"><input placeholder="Was muss mit?" onkeydown="if(event.key==='Enter')addPk('${t.id}','${o.id}',this.nextElementSibling)"><button onclick="addPk('${t.id}','${o.id}',this)" aria-label="Hinzufügen">+</button></div></div></div>` +
-    pk.map(x => `<div class="pk${x.d ? " done" : ""}" onclick="togPk('${t.id}','${o.id}','${x.id}')"><span>${x.d ? "✅" : "⬜"}</span><span class="t">${esc(x.n)}</span><button class="x" onclick="event.stopPropagation();delPk('${t.id}','${o.id}','${x.id}')" aria-label="Löschen">✕</button></div>`).join("");
+  return `<div class="exbox"><div class="th"><span>💶 Ausgaben</span><b>${sum > 0 ? money(sum, t.cur) : ""}</b></div>` +
+    `<div class="exadd"><input inputmode="decimal" placeholder="Betrag" onkeydown="if(event.key==='Enter')addEx('${t.id}','${o.id}',this.nextElementSibling)"><button onclick="addEx('${t.id}','${o.id}',this)" aria-label="Ausgabe hinzufügen">+</button></div>${ex.length ? `<button class="sec exundo" onclick="delLastEx('${t.id}','${o.id}')">↶ Letzte Ausgabe löschen</button>` : ""}</div>`;
 }
 function addEx(tid, sid, btn) {
   const o = findStop(tid, sid)[1], inp = btn.parentNode.querySelector("input"), a = num(inp.value);
